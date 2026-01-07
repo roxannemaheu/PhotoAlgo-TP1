@@ -9,8 +9,6 @@ Ce script:
 3. Applique le mappage tonal:
    - Linéaire (implémenté)
    - Reinhard (À IMPLÉMENTER)
-   - Filmic (À IMPLÉMENTER)
-   - [Cycles supérieurs] Local par filtre bilatéral (À IMPLÉMENTER)
 4. Convertit XYZ vers sRGB linéaire (implémenté)
 5. Applique l'OETF sRGB (implémenté)
 6. Sauvegarde le JPEG final (implémenté)
@@ -134,88 +132,6 @@ def tonemap_reinhard(xyz_image):
     raise NotImplementedError("Reinhard à implémenter")
 
 
-def tonemap_filmic(
-    xyz_image,
-    A=0.22,
-    B=0.3,
-    C=0.1,
-    D=0.2,
-    E=0.01,
-    F=0.3,
-    exposure=2.0,
-    white_point=11.2,
-):
-    """
-    Mappage tonal Filmic (style Uncharted 2).
-
-    Courbe en S avec toe (ombres) et shoulder (hautes lumières).
-
-    La fonction de transfert est:
-        f(x) = ((x*(A*x + C*B) + D*E) / (x*(A*x + B) + D*F)) - E/F
-
-    Args:
-        xyz_image: Image XYZ [H, W, 3]
-        A, B, C, D, E, F: Paramètres de la courbe
-        exposure: Multiplicateur d'exposition
-        white_point: Point blanc pour normalisation
-
-    Returns:
-        Image XYZ avec mappage tonal appliqué
-
-    TODO: Implémenter l'opérateur Filmic
-
-    Indices:
-    1. Définir la fonction curve(x) selon la formule ci-dessus
-    2. Appliquer à Y * exposure
-    3. Normaliser par curve(white_point)
-    4. Appliquer le ratio à X et Z
-    """
-    # =========================================================================
-    # TODO: Implémenter le mappage tonal Filmic
-    # =========================================================================
-
-    raise NotImplementedError("Filmic à implémenter")
-
-
-def tonemap_bilateral(xyz_image, sigma_spatial=16, sigma_range=0.1, compression=0.5):
-    """
-    Mappage tonal local par filtre bilatéral.
-
-    [CYCLES SUPÉRIEURS UNIQUEMENT]
-
-    Décompose l'image en couche de base (basse fréquence) et couche de détail
-    (haute fréquence). Compresse la couche de base tout en préservant les détails.
-
-    Références:
-    - Durand & Dorsey (2002)
-    - Paris & Durand (2006)
-
-    Args:
-        xyz_image: Image XYZ [H, W, 3]
-        sigma_spatial: Écart-type spatial du filtre
-        sigma_range: Écart-type de plage du filtre
-        compression: Facteur de compression pour la couche de base
-
-    Returns:
-        Image XYZ avec mappage tonal local appliqué
-
-    TODO: Implémenter le mappage tonal local (cycles supérieurs)
-
-    Indices:
-    1. Convertir Y en log: log_Y = log(Y + epsilon)
-    2. Appliquer un filtre bilatéral pour obtenir la couche de base
-    3. Soustraire pour obtenir la couche de détail: detail = log_Y - base
-    4. Compresser la couche de base: base_compressed = base * compression
-    5. Recombiner: log_Y_new = base_compressed + detail
-    6. Reconvertir: Y_new = exp(log_Y_new)
-    """
-    # =========================================================================
-    # TODO: Implémenter le mappage tonal local (cycles supérieurs)
-    # =========================================================================
-
-    raise NotImplementedError("Mappage tonal local à implémenter")
-
-
 # =============================================================================
 # Sauvegarde d'Images
 # =============================================================================
@@ -292,9 +208,8 @@ def generate_report(results, output_dir):
     )
     algorithms += algorithm_box(
         "B) Mappage tonal",
-        "<p><b>Linéaire:</b> Pas de compression. <strong>IMPLÉMENTÉ</strong></p>"
-        "<p><b>Reinhard:</b> <code>L_out = L_in / (1 + L_in)</code>. <strong>À IMPLÉMENTER</strong></p>"
-        "<p><b>Filmic:</b> Courbe en S (toe + shoulder). <strong>À IMPLÉMENTER</strong></p>",
+        "<p><b>Linéaire:</b> Pas de compression.</p>"
+        "<p><b>Reinhard:</b> <code>L_out = L_in / (1 + L_in)</code>. <strong>À IMPLÉMENTER</strong></p>",
     )
 
     algorithms += algorithm_box(
@@ -328,7 +243,7 @@ def generate_report(results, output_dir):
             "Comparaison des opérateurs",
             figure(
                 f"{basename}_tonemapping_comparison.png",
-                "Comparaison: Linéaire, Reinhard, Filmic",
+                "Comparaison: Linéaire, Reinhard",
             ),
         )
 
@@ -428,7 +343,6 @@ def process_display_encoding(
             tonemap_funcs = {
                 "Linéaire": tonemap_linear,
                 "Reinhard": tonemap_reinhard,
-                "Filmic": tonemap_filmic,
             }
             srgb_results = create_tonemapping_comparison_figure(
                 xyz_image,
