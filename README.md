@@ -11,7 +11,7 @@ Si vous n'avez pas encore Python installé sur votre système :
 
 1. **Télécharger Python** :
    - Visitez [https://www.python.org/downloads/](https://www.python.org/downloads/)
-   - Téléchargez une version de Python récente, entre 3.11 et 3.14, pour votre système d'exploitation
+   - Téléchargez une version de Python récente, entre 3.11 et 3.13, pour votre système d'exploitation
    - **Important** : Lors de l'installation sur Windows, cochez l'option "Add Python to PATH" pour pouvoir utiliser Python depuis la ligne de commande
    - Exécutez l'installateur et suivez les instructions
 
