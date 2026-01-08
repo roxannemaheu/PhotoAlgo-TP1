@@ -51,6 +51,45 @@ def get_css_styles(accent_color="#4fc3f7"):
             margin-bottom: 40px;
         }}
         
+        .student-name-field {{
+            background: rgba(255,255,255,0.05);
+            border: 2px dashed rgba(255,255,255,0.3);
+            border-radius: 8px;
+            padding: 15px 25px;
+            margin: 20px auto;
+            max-width: 500px;
+            text-align: left;
+        }}
+        
+        .student-name-field label {{
+            display: block;
+            color: #a0a0a0;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }}
+        
+        .student-name-field input {{
+            width: 100%;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 4px;
+            padding: 10px 15px;
+            color: #fff;
+            font-size: 1em;
+            font-family: 'Source Sans Pro', sans-serif;
+        }}
+        
+        .student-name-field input:focus {{
+            outline: none;
+            border-color: {accent_color};
+            box-shadow: 0 0 0 2px {accent_color}40;
+        }}
+        
+        .student-name-field input::placeholder {{
+            color: #666;
+            font-style: italic;
+        }}
+        
         h1 {{
             font-size: 2.5em;
             font-weight: 700;
@@ -165,23 +204,201 @@ def get_css_styles(accent_color="#4fc3f7"):
         
         .figure-container {{
             text-align: center;
-            margin: 25px 0;
-            padding: 20px;
+            margin: 15px 0;
+            padding: 15px;
             background: rgba(0,0,0,0.2);
             border-radius: 12px;
         }}
         
         .figure-container img {{
-            max-width: 100%;
+            max-width: 60%;
+            max-height: 400px;
             border-radius: 8px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }}
+        
+        .figure-container img:hover {{
+            transform: scale(1.02);
+            box-shadow: 0 6px 30px rgba(0,0,0,0.5);
         }}
         
         .figure-caption {{
-            margin-top: 15px;
+            margin-top: 10px;
             font-style: italic;
             color: #a0a0a0;
-            font-size: 0.95em;
+            font-size: 0.9em;
+        }}
+        
+        /* Lightbox/Modal styles */
+        .lightbox {{
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            animation: fadeIn 0.3s;
+        }}
+        
+        .lightbox.active {{
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }}
+        
+        .lightbox-content {{
+            max-width: 95vw;
+            max-height: 95vh;
+            margin: auto;
+            animation: zoomIn 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }}
+        
+        .lightbox-content img {{
+            max-width: 100%;
+            max-height: 95vh;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.8);
+        }}
+        
+        .lightbox-close {{
+            position: absolute;
+            top: 20px;
+            right: 40px;
+            color: #fff;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.2s;
+        }}
+        
+        .lightbox-close:hover {{
+            color: #ffc107;
+        }}
+        
+        @keyframes fadeIn {{
+            from {{ opacity: 0; }}
+            to {{ opacity: 1; }}
+        }}
+        
+        @keyframes zoomIn {{
+            from {{ transform: scale(0.8); opacity: 0; }}
+            to {{ transform: scale(1); opacity: 1; }}
+        }}
+        
+        /* Image grid styles */
+        .image-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }}
+        
+        .image-grid-item {{
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(0,0,0,0.3);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }}
+        
+        .image-grid-item:hover {{
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+        }}
+        
+        .image-grid-item img {{
+            width: 100%;
+            height: auto;
+            display: block;
+        }}
+        
+        .image-grid-item .image-label {{
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            color: #fff;
+            padding: 15px 10px 10px;
+            font-size: 0.9em;
+            text-align: center;
+        }}
+        
+        /* Comparison grid styles */
+        .comparison-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
+            gap: 30px;
+            margin: 30px 0;
+        }}
+        
+        .comparison-pair {{
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }}
+        
+        .comparison-pair-title {{
+            text-align: center;
+            color: #fff;
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(255,255,255,0.2);
+        }}
+        
+        .comparison-images {{
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }}
+        
+        .comparison-image-item {{
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            background: rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }}
+        
+        .comparison-image-item:hover {{
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+        }}
+        
+        .comparison-image-item img {{
+            width: 100%;
+            height: auto;
+            display: block;
+        }}
+        
+        .comparison-image-label {{
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            color: #fff;
+            padding: 12px 8px 8px;
+            font-size: 0.85em;
+            text-align: center;
+            font-weight: 500;
         }}
         
         .metadata-grid {{
@@ -326,6 +543,14 @@ def html_document(title, subtitle, icon, content, accent_color="#4fc3f7"):
     <style>{css}</style>
 </head>
 <body>
+    <!-- Lightbox Modal -->
+    <div id="lightbox" class="lightbox" onclick="closeLightbox(event)">
+        <span class="lightbox-close">&times;</span>
+        <div class="lightbox-content">
+            <img id="lightbox-img" src="" alt="">
+        </div>
+    </div>
+    
     <div class="container">
         <header>
             <h1>{icon} {title}</h1>
@@ -336,9 +561,38 @@ def html_document(title, subtitle, icon, content, accent_color="#4fc3f7"):
         {content}
         
         <footer>
-            <p>TP1 - Photographie Algorithmique | Université Laval</p>
+            <p>GIF 4105/7105 &mdash; TP1 | Formation d'une image</p>
         </footer>
     </div>
+    
+    <script>
+        function openLightbox(img) {{
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightbox-img');
+            const fullSizeSrc = img.getAttribute('data-fullsize') || img.src;
+            lightboxImg.src = fullSizeSrc;
+            lightbox.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }}
+        
+        function closeLightbox(event) {{
+            const lightbox = document.getElementById('lightbox');
+            // Only close if clicking on the background or close button
+            if (event.target === lightbox || event.target.classList.contains('lightbox-close')) {{
+                lightbox.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }}
+        }}
+        
+        // Close lightbox on Escape key
+        document.addEventListener('keydown', function(event) {{
+            if (event.key === 'Escape') {{
+                const lightbox = document.getElementById('lightbox');
+                lightbox.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }}
+        }});
+    </script>
 </body>
 </html>
 """
@@ -364,14 +618,92 @@ def subsection(title, content=""):
     return f"<h3>{title}</h3>\n{content}"
 
 
-def figure(img_src, caption="", alt=""):
-    """Create a figure container with image and caption."""
+def figure(img_src, caption="", alt="", clickable=True):
+    """Create a figure container with image and caption. Images are clickable to view larger."""
     alt = alt or caption
     caption_html = f'<p class="figure-caption">{caption}</p>' if caption else ""
+    click_class = "clickable-image" if clickable else ""
     return f"""
         <div class="figure-container">
-            <img src="{img_src}" alt="{alt}">
+            <img src="{img_src}" alt="{alt}" class="{click_class}" data-fullsize="{img_src}" onclick="openLightbox(this)">
             {caption_html}
+        </div>
+    """
+
+
+def image_grid(images, title=""):
+    """
+    Create a grid of clickable images.
+    
+    Args:
+        images: List of dicts with 'src' (image path), 'label' (caption), and optionally 'alt'
+        title: Optional title for the grid section
+    
+    Returns:
+        HTML string for the image grid
+    """
+    grid_items = ""
+    for img_data in images:
+        src = img_data.get("src", "")
+        label = img_data.get("label", "")
+        alt = img_data.get("alt", label)
+        grid_items += f"""
+            <div class="image-grid-item" onclick="openLightbox(this.querySelector('img'))">
+                <img src="{src}" alt="{alt}" data-fullsize="{src}">
+                <div class="image-label">{label}</div>
+            </div>
+        """
+    
+    title_html = f'<h3>{title}</h3>' if title else ""
+    return f"""
+        {title_html}
+        <div class="image-grid">
+            {grid_items}
+        </div>
+    """
+
+
+def comparison_grid(comparisons, title=""):
+    """
+    Create a grid of comparison pairs (final image vs reference image).
+    
+    Args:
+        comparisons: List of dicts with 'basename', 'final_src' (final image path), 
+                     'reference_src' (reference image path), and optionally 'alt'
+        title: Optional title for the grid section
+    
+    Returns:
+        HTML string for the comparison grid
+    """
+    comparison_items = ""
+    for comp_data in comparisons:
+        basename = comp_data.get("basename", "")
+        final_src = comp_data.get("final_src", "")
+        reference_src = comp_data.get("reference_src", "")
+        final_alt = comp_data.get("final_alt", f"Image finale - {basename}")
+        reference_alt = comp_data.get("reference_alt", f"Référence sRGB - {basename}")
+        
+        comparison_items += f"""
+            <div class="comparison-pair">
+                <div class="comparison-pair-title">{basename}</div>
+                <div class="comparison-images">
+                    <div class="comparison-image-item" onclick="openLightbox(this.querySelector('img'))">
+                        <img src="{final_src}" alt="{final_alt}" data-fullsize="{final_src}">
+                        <div class="comparison-image-label">Votre résultat</div>
+                    </div>
+                    <div class="comparison-image-item" onclick="openLightbox(this.querySelector('img'))">
+                        <img src="{reference_src}" alt="{reference_alt}" data-fullsize="{reference_src}">
+                        <div class="comparison-image-label">Référence sRGB</div>
+                    </div>
+                </div>
+            </div>
+        """
+    
+    title_html = f'<h3>{title}</h3>' if title else ""
+    return f"""
+        {title_html}
+        <div class="comparison-grid">
+            {comparison_items}
         </div>
     """
 
@@ -817,7 +1149,7 @@ def create_xyz_comparison_figure(
 
 
 def create_tonemapping_curves_figure(output_path):
-    """Create figure showing tone mapping curves (Linear, Reinhard, Filmic)."""
+    """Create figure showing tone mapping curves (Linear, Reinhard)."""
     fig, ax = plt.subplots(figsize=(8, 6))
 
     x = np.linspace(0, 5, 500)
@@ -827,15 +1159,6 @@ def create_tonemapping_curves_figure(output_path):
 
     # Reinhard
     ax.plot(x, x / (1 + x), "r-", lw=2, label="Reinhard: L/(1+L)")
-
-    # Filmic
-    def filmic(v, A=0.22, B=0.3, C=0.1, D=0.2, E=0.01, F=0.3, exp=2.0, wp=11.2):
-        def f(x):
-            return ((x * (A * x + C * B) + D * E) / (x * (A * x + B) + D * F)) - E / F
-
-        return f(v * exp) / f(wp)
-
-    ax.plot(x, filmic(x), "g-", lw=2, label="Filmic")
 
     ax.axhline(y=1, color="gray", ls="--", alpha=0.5)
     ax.axvline(x=1, color="gray", ls=":", alpha=0.5)
