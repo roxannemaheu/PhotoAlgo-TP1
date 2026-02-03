@@ -1,0 +1,43 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.env
+.venv/
+venv/
+
+# --- PyCharm / IntelliJ ---
+.idea/
+*.iml
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# --- Logs ---
+*.log
+
+# --- Excel ---
+*.xls
+*.xlsx
+*.xlsm
+*.xlsb
+
+# --- Images ---
+*.jpg
+*.png
+*.tiff
+
+# --- Json ---
+*.json
+
+# --- Html ---
+*.html
+
+# --- Digital negative ---
+*.dng
+
+# --- Autres fichiers temporaires ---
+*.tmp
+*.bak

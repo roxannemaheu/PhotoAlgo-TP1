@@ -14,10 +14,11 @@ Usage:
     python tp1_sec2.py --input-dir images_intermediaires_sec1 --output-dir images_intermediaires_sec2
 """
 
-import numpy as np
 import glob
 import os
 import time
+
+import numpy as np
 from scipy.signal import convolve2d
 
 from tp1_io import load_tiff, load_metadata, save_tiff16, save_jpeg, linear_to_srgb
@@ -30,7 +31,6 @@ from tp1_rapport import (
     algorithm_box,
     save_report,
     create_demosaic_comparison_figure,
-    create_difference_figure,
     find_edge_region,
     create_demosaic_zoom_figure,
 )
@@ -91,12 +91,34 @@ def demosaic_bilinear(raw_data, pattern_2x2):
     rgb = np.zeros((H, W, 3), dtype=np.float32)
     masks, _ = get_color_masks(pattern_2x2, H, W)
 
-    # `masks` est un dictionnaire avec les masques booléens pour 'R', 'G', 'B'
-    # Indice: faites une convolution 2D avec les noyaux appropriés pour chaque canal.
+    kernel_g = np.array(
+        [[0, 0.25, 0],
+         [0.25, 1, 0.25],
+         [0, 0.25, 0]], dtype=np.float32
+    )
 
-    raise NotImplementedError("Demosaic_bilinear à implémenter")
-    
-    return rgb
+    kernel_rb = np.array(
+        [[0.25, 0.5, 0.25],
+         [0.5, 1, 0.5],
+         [0.25, 0.5, 0.25]], dtype=np.float32
+    )
+
+    for c, color in enumerate(["R", "G", "B"]):
+        mask = masks[color].astype(np.float32)
+        channel = raw_data * mask
+
+        if color in ["R", "B"]:
+            kernel = kernel_rb
+        else:
+            kernel = kernel_g
+
+        num = convolve2d(channel, kernel, mode="same", boundary="symm")
+        den = convolve2d(mask, kernel, mode="same", boundary="symm")
+        interp = np.divide(num, den, out=np.zeros_like(num), where=den > 0)
+
+        rgb[..., c] = interp
+
+    return np.clip(rgb, 0.0, 1.0)
 
 
 def demosaic_malvar(raw_data, pattern_2x2):
@@ -112,45 +134,87 @@ def demosaic_malvar(raw_data, pattern_2x2):
 
     Returns:
         Image RGB 3D [H, W, 3] normalisée [0, 1]
-
-    TODO: Implémenter l'algorithme Malvar-He-Cutler avec les noyaux 5×5
-          décrits dans la Figure 2 de l'article.
-
-    Indices:
-    - Les noyaux sont définis pour différentes configurations:
-      * G aux positions R/B
-      * R aux positions G dans les rangées R
-      * R aux positions G dans les rangées B
-      * R aux positions B
-      * (et symétriquement pour B)
-    - Les noyaux utilisent des corrections de gradient pour réduire les artefacts
     """
+
     H, W = raw_data.shape
     rgb = np.zeros((H, W, 3), dtype=np.float32)
     masks, positions = get_color_masks(pattern_2x2, H, W)
 
-    # =========================================================================
-    # TODO: Implémenter les noyaux Malvar-He-Cutler 5×5
-    # =========================================================================
-    #
-    # Exemple de structure pour les noyaux (à compléter avec les vraies valeurs):
-    #
-    # kernel_g_at_rb = np.array([
-    #     [0,  0, -1,  0,  0],
-    #     [0,  0,  2,  0,  0],
-    #     [-1, 2,  4,  2, -1],
-    #     [0,  0,  2,  0,  0],
-    #     [0,  0, -1,  0,  0]
-    # ], dtype=np.float32) / 8
-    #
-    # kernel_rb_at_g_same_row = ...
-    # kernel_rb_at_g_same_col = ...
-    # kernel_rb_at_opposite = ...
-    #
-    # Puis appliquer les convolutions appropriées selon les positions du motif.
-    # =========================================================================
+    R_mask = masks["R"]
+    G_mask = masks["G"]
+    B_mask = masks["B"]
 
-    raise NotImplementedError("Malvar-He-Cutler non implémenté")
+    # --- Noyaux Malvar (Fig. 2) ---
+    kernel_g_at_rb = np.array([
+        [0, 0, -1, 0, 0],
+        [0, 0, 2, 0, 0],
+        [-1, 2, 4, 2, -1],
+        [0, 0, 2, 0, 0],
+        [0, 0, -1, 0, 0]
+    ], dtype=np.float32) / 8
+
+    kernel_rb_at_g_same_row = np.array([
+        [0, 0, 0.5, 0, 0],
+        [0, -1, 0, -1, 0],
+        [-1, 4, 5, 4, -1],
+        [0, -1, 0, -1, 0],
+        [0, 0, 0.5, 0, 0],
+    ], dtype=np.float32) / 8.0
+
+    kernel_rb_at_g_same_col = np.array([
+        [0, 0, -1, 0, 0],
+        [0, -1, 4, -1, 0],
+        [0.5, 0, 5, 0, 0.5],
+        [0, -1, 4, -1, 0],
+        [0, 0, -1, 0, 0],
+    ], dtype=np.float32) / 8.0
+
+    kernel_rb_at_opposite = np.array([
+        [0, 0, -1.5, 0, 0],
+        [0, 2, 0, 2, 0],
+        [-1.5, 0, 6, 0, -1.5],
+        [0, 2, 0, 2, 0],
+        [0, 0, -1.5, 0, 0],
+    ], dtype=np.float32) / 8.0
+
+    # Copier valeurs connues
+    rgb[..., 0][R_mask] = raw_data[R_mask]  # Rouge connu
+    rgb[..., 1][G_mask] = raw_data[G_mask]  # Vert connu
+    rgb[..., 2][B_mask] = raw_data[B_mask]  # Bleu connu
+
+    # --- Interpolation du V aux positions R et B ---
+    G_interp = convolve2d(raw_data, kernel_g_at_rb, mode="same", boundary="symm")
+    rgb[..., 1][R_mask | B_mask] = G_interp[R_mask | B_mask]
+
+    # --- Interpolation R et B aux positions V ---
+    # On regarde dans quelle rangée on est (R ou B)
+    is_G_on_R_row = G_mask & (np.roll(R_mask, shift=1, axis=1) | np.roll(R_mask, shift=-1, axis=1))
+    is_G_on_B_row = G_mask & (np.roll(B_mask, shift=1, axis=1) | np.roll(B_mask, shift=-1, axis=1))
+
+    # Convolutions pré-calculées
+    R_same_row = convolve2d(raw_data, kernel_rb_at_g_same_row, mode="same", boundary="symm")
+    R_same_col = convolve2d(raw_data, kernel_rb_at_g_same_col, mode="same", boundary="symm")
+
+    B_same_row = R_same_row.copy()
+    B_same_col = R_same_col.copy()
+
+    # R aux positions G
+    rgb[..., 0][is_G_on_R_row] = R_same_row[is_G_on_R_row]
+    rgb[..., 0][is_G_on_B_row] = R_same_col[is_G_on_B_row]
+
+    # B aux positions G
+    rgb[..., 2][is_G_on_B_row] = B_same_row[is_G_on_B_row]
+    rgb[..., 2][is_G_on_R_row] = B_same_col[is_G_on_R_row]
+
+    # --- Interpolation R aux positions B et de B aux positons R ---
+
+    RB_opposite = convolve2d(raw_data, kernel_rb_at_opposite, mode="same", boundary="symm")
+
+    rgb[..., 0][B_mask] = RB_opposite[B_mask]  # R aux pixels B
+    rgb[..., 2][R_mask] = RB_opposite[R_mask]  # B aux pixels R
+
+    # Clamp pour sécurité numérique
+    np.clip(rgb, 0, 1, out=rgb)
 
     return rgb
 
@@ -264,10 +328,10 @@ def generate_report(results, output_dir):
 
 
 def process_mosaic_files(
-    input_dir="images_intermediaires_sec1",
-    output_dir="images_intermediaires_sec2",
-    enable_malvar=True,
-    enable_learned=False,
+        input_dir="images_intermediaires_sec1",
+        output_dir="images_intermediaires_sec2",
+        enable_malvar=True,
+        enable_learned=False,
 ):
     """Traiter tous les fichiers TIFF mosaïques et appliquer le dématriçage."""
     os.makedirs(output_dir, exist_ok=True)
@@ -282,9 +346,9 @@ def process_mosaic_files(
         print(f"Aucun fichier TIFF trouvé dans {input_dir}/")
         return
 
-    print(f"\n{'#'*60}")
+    print(f"\n{'#' * 60}")
     print("# Section 2: Dématriçage")
-    print(f"{'#'*60}")
+    print(f"{'#' * 60}")
     print(f"\n{len(tiff_files)} fichier(s) TIFF trouvé(s)")
 
     results = []
@@ -297,7 +361,7 @@ def process_mosaic_files(
             print(f"  Ignoré {basename}: métadonnées non trouvées")
             continue
 
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"Traitement: {basename}")
         print("=" * 60)
 
@@ -376,7 +440,7 @@ def process_mosaic_files(
     if results:
         generate_report(results, output_dir)
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Terminé! {len(results)} image(s) traitée(s) → {output_dir}/")
     print("=" * 60)
 
