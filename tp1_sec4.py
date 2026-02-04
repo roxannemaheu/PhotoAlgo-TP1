@@ -21,6 +21,7 @@ Usage:
 
 import glob
 import os
+from collections import defaultdict
 
 import numpy as np
 from PIL import Image
@@ -124,15 +125,6 @@ def tonemap_reinhard(xyz_image):
 
     Returns:
         Image XYZ avec mappage tonal appliqué
-
-    TODO: Implémenter l'opérateur de Reinhard
-
-    Indices:
-    1. Extraire le canal Y (luminance): Y = xyz_image[:, :, 1]
-    2. Appliquer la formule: Y_mapped = Y / (1 + Y)
-    3. Calculer le ratio: scale = Y_mapped / Y (attention aux divisions par zéro!)
-    4. Appliquer ce ratio à X et Z également
-    5. Retourner l'image résultante
     """
 
     # Copier l'image pour ne pas modifier l'entrée
@@ -257,6 +249,72 @@ def analyze_jpeg_artifacts(img_8bit, output_dir, basename, qualities=(95, 75, 50
         "png_path": png_path,
         "plot_path": plot_path,
     }
+
+
+def plot_global_jpeg_size_vs_quality(
+        global_jpeg_sizes,
+        global_png_sizes,
+        output_path,
+        title="Taille JPEG vs Qualité (moyenne sur toutes les images)",
+):
+    """
+    Trace un graphique global taille JPEG vs qualité (moyenne sur toutes les images).
+
+    Args:
+        global_jpeg_sizes: dict {quality: [sizes_in_Ko]}
+        output_path: chemin de sauvegarde du graphique
+        title: titre optionnel
+    """
+    if not global_jpeg_sizes:
+        print("  Aucune donnée JPEG globale à tracer.")
+        return
+
+    qualities = sorted(global_jpeg_sizes.keys())
+    mean_sizes = [np.mean(global_jpeg_sizes[q]) for q in qualities]
+    std_sizes = [np.std(global_jpeg_sizes[q]) for q in qualities]
+
+    mean_png_size = np.mean(global_png_sizes)
+
+    fig, ax = plt.subplots(figsize=(6, 4))
+
+    ax.plot(
+        qualities,
+        mean_sizes,
+        "o-",
+        color="tab:blue",
+        label="Taille moyenne JPEG",
+    )
+
+    ax.fill_between(
+        qualities,
+        np.array(mean_sizes) - std_sizes,
+        np.array(mean_sizes) + std_sizes,
+        alpha=0.25,
+        color="tab:blue",
+        label="± écart-type",
+    )
+
+    # Ligne PNG de référence
+    ax.axhline(
+        mean_png_size,
+        color="tab:green",
+        linestyle="--",
+        linewidth=2,
+        label="PNG (sans perte, moyenne)",
+    )
+
+    ax.set_xlabel("Qualité JPEG")
+    ax.set_ylabel("Taille du fichier (Ko)")
+    ax.set_xticks(qualities)
+    ax.set_title(title)
+    ax.grid(True, alpha=0.3)
+    ax.legend()
+
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=150)
+    plt.close(fig)
+
+    print(f"  Graphique global JPEG sauvegardé: {output_path}")
 
 
 def create_jpeg_zoom_figure(images_dict, output_path, edge_pos=None, center_pos=None, zoom_size=150, title=""):
@@ -773,6 +831,9 @@ def process_display_encoding(
 
     results = []
 
+    global_jpeg_sizes = defaultdict(list)
+    global_png_sizes = []
+
     for tiff_path in tiff_files:
         basename = os.path.basename(tiff_path).replace(input_suffix, "")
 
@@ -835,6 +896,11 @@ def process_display_encoding(
             print("  [D] Analyse des artefacts JPEG...")
             jpeg_analysis = analyze_jpeg_artifacts(img_8bit, output_dir, basename)
 
+            for q, size in jpeg_analysis["jpeg_sizes_Ko"].items():
+                global_jpeg_sizes[q].append(size)
+            png_size = os.path.getsize(jpeg_analysis["png_path"]) / 1024.0
+            global_png_sizes.append(png_size)
+
             zoom_images = {"PNG": jpeg_analysis["png_path"]}
             zoom_images.update({
                 f"JPEG q{q}": os.path.join(output_dir, f"{basename}_q{q}.jpg")
@@ -878,6 +944,13 @@ def process_display_encoding(
             import traceback
 
             traceback.print_exc()
+
+    if global_jpeg_sizes:
+        plot_global_jpeg_size_vs_quality(
+            global_jpeg_sizes,
+            global_png_sizes,
+            os.path.join(output_dir, "jpeg_size_vs_quality_global_mean.png"),
+        )
 
     if results:
         generate_report(results, output_dir)
