@@ -407,7 +407,7 @@ def process_white_balance(
             # Sauvegarder l'original
             save_jpeg(image, os.path.join(output_dir, f"{basename}_original.jpg"))
 
-            # A) Sélection automatique de région neutre (à implémenter par l'étudiant)
+            # A) Sélection automatique de région neutre (avec conversion XYZ)
             print("  [A] Sélection automatique de région neutre...")
             wb_auto, mult_auto, neutral_pos = white_balance_auto_neutral(
                 image, region_size=15
@@ -415,12 +415,24 @@ def process_white_balance(
             result["multipliers"]["auto_neutral"] = mult_auto
             result["neutral_pos"] = neutral_pos
 
-            # B) Grey World (à implémenter par l'étudiant)
+            xyz_auto = camera_rgb_to_xyz(wb_auto, rgb_xyz_matrix)
+            save_tiff16(
+                np.clip(xyz_auto, 0, 1),
+                os.path.join(output_dir, f"{basename}_auto_neutral_xyz.tiff"),
+            )
+
+            # B) Grey World (avec conversion XYZ)
             print("  [B] Grey World...")
             wb_grey_world, mult_gw = white_balance_grey_world(image)
             result["multipliers"]["grey_world"] = mult_gw
 
-            # C) Caméra (implémenté)
+            xyz_gw = camera_rgb_to_xyz(wb_grey_world, rgb_xyz_matrix)
+            save_tiff16(
+                np.clip(xyz_gw, 0, 1),
+                os.path.join(output_dir, f"{basename}_grey_world_xyz.tiff"),
+            )
+
+            # C) Caméra (avec conversion XYZ)
             print("  [C] Balance des blancs caméra...")
             wb_camera, mult_cam = white_balance_camera(image, camera_wb)
             result["multipliers"]["camera"] = mult_cam
@@ -428,8 +440,6 @@ def process_white_balance(
             save_tiff16(wb_camera, os.path.join(output_dir, f"{basename}_camera.tiff"))
             save_jpeg(wb_camera, os.path.join(output_dir, f"{basename}_camera.jpg"))
 
-            # Conversion XYZ
-            print("  Conversion vers XYZ...")
             xyz_camera = camera_rgb_to_xyz(wb_camera, rgb_xyz_matrix)
             save_tiff16(
                 np.clip(xyz_camera, 0, 1),

@@ -604,7 +604,7 @@ def generate_report(results, output_dir):
 
     # Générer le document HTML final
     html = html_document(
-        "Rapport TP1 - &lt;votre nom&gt;",
+        "Rapport TP1 - Roxanne Maheu",
         "",
         "📸",
         content,
