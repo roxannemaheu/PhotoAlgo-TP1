@@ -311,6 +311,88 @@ def generate_report(results, output_dir):
 
         content += section(basename, section_content)
 
+    # Discussion
+    discussion_content = subsection(
+        "Interprétation visuelle des images obtenues",
+        """
+        <p>
+        Il y a peu de différences entre les résultats obtenus avec chacune des méthodes. 
+        Ces minces différences ne sont perceptibles qu'en zoomant sur les zones avec de forts contrastes.
+        On voit alors que l'extrapolation bilinéaire donne un résultat avec des contours plus adoucis, 
+        alors que les contours obtenus avec Malvar sont plus définis.
+        </p>
+    
+        <p>
+        Peu importe la méthode utilisée, on voit parfois apparaitre des pixels de couleur (effet de Moiré) 
+        à des endroits de haute luminosité (couleur blanche).
+        L'interpolation bilinéaire permet de "lisser" ces pixels de couleur, et donc les atténue, 
+        comparativement à la méthode Malvac-He-Cutler.
+        </p>  
+        """
+    )
+
+    discussion_content += subsection(
+        "Interprétation des métriques: Temps",
+        """
+        <p>
+        L'interpolation bilinéaire est toujours plus rapide que la méthode Malvar-He-Cutler, 
+        probablement en raison des kernels de convolution, qui sont plus gros.
+        Donc la faible amélioration de la qualité se fait au détriment de la vitesse.
+        </p>  
+        """
+    )
+
+    discussion_content += subsection(
+        "Interprétation des métriques: PSNR",
+        """        
+        <p>
+        Le PSNR est une métrique qui informe sur la différence de valeur pixel par pixel entre deux images. Il s'exprime en décibels (dB). 
+        Plus la valeur est élevée, plus l'image traitée est proche de l'originale. 
+        </p>
+                
+        <p>
+        Selon la littérature, pour des données 8 bits, les valeurs de PSNR oscillent généralement entre 30 et 50 dB. 
+        Pour des données 16 bits, les valeurs de PSNR oscillent généralement entre 60 et 80 dB. 
+        Nos résultats vont de 40.82 dB à 57.08 dB, pour des images majoritairement de 12 et 14 bits, et une seule image à 16 bits (pelican).
+        </p>
+        
+        <p> 
+        Dans notre cas, comme le PSNR se calcule par rapport à l'image avec interpolation bilinéaire, mon interprétion de la métrique
+        est que plus elle est faible, plus la différence entre les deux algorithmes est marquée (on ne peut que comparer des images ayant le même nombre de bits). La PSNR la plus élevée est pour pelican, ce qui est logique puisque J'ai toutefois eu 
+        du mal à voir une corrélation entre la valeur de la métrique (qui varie entre 40.82 et 57.08) et la similarité entre les résultats.
+        </p>
+        """
+    )
+
+    discussion_content += subsection(
+        "Interprétation des métriques: SSIM",
+        """
+        <p>
+        Le SSIM repose sur un indice de similarité structurelle entre deux images, en intégrant le contraste de l'image, les différences structurelles et la luminosité.
+        Plus il est près de 1, plus deux images sont similaires. Il est moins sensible au Gaussian noise, mais plus sensible à la compression.
+        Dans notre cas, les valeurs de SSIM (Structural Similarity Index) sont très près de 1, ce qui indique que la structure globable 
+        de l'image est presque autant préservée 
+        ce qui indique des gains faibles au niveau de la réduction des artefacts de couleur et la netteté des contours.
+        </p>
+        """
+    )
+
+    discussion_content += subsection(
+        "Référence",
+        """
+        <p>
+        Référence pour la compréhension des métriques PSNR et SSIM: 
+        Sara, U. , Akter, M. and Uddin, M. (2019) Image Quality Assessment through FSIM, SSIM, MSE and PSNR—A Comparative Study. Journal of Computer and Communications, 7, 8-18. doi: 10.4236/jcc.2019.73002.
+        Disponible à https://www.scirp.org/journal/paperinformation?paperid=90911.
+        </p>
+        """
+
+    content += section(
+        "Discussion",
+        discussion_content,
+        icon="📝",
+    )
+
     html = html_document(
         "TP1 - Section 2",
         "Dématriçage (Demosaicing)",
