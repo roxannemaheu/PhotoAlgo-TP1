@@ -185,7 +185,7 @@ def save_png(img_8bit, filepath):
 
 def analyze_jpeg_artifacts(img_8bit, output_dir, basename, qualities=(95, 75, 50, 25)):
     """
-    Analyse des artefacts JPEG pour une image linéaire sRGB.
+    Analyse des tailles de fichiers JPEG par rapport à un PNG de référence (sans perte).
 
     Args:
         img_8bit: Image sRGB uint8 [H, W, 3], 0-255
@@ -194,19 +194,17 @@ def analyze_jpeg_artifacts(img_8bit, output_dir, basename, qualities=(95, 75, 50
         qualities: Liste de qualités JPEG à tester
 
     Returns:
-        dict: informations sur la taille des fichiers et différences avec PNG
+        dict avec :
+            - jpeg_sizes_Ko : {quality: size_in_Ko}
+            - png_path      : chemin du PNG de référence
     """
     os.makedirs(output_dir, exist_ok=True)
 
-    # Sauvegarder PNG (sans perte)
+    # PNG de référence (sans perte)
     png_path = os.path.join(output_dir, f"{basename}_reference.png")
     save_png(img_8bit, png_path)
 
     sizes = {}
-    mse_values = {}
-
-    # Convertir img_8bit en float [0-1] pour le calcul du MSE
-    img_float = img_8bit.astype(np.float32) / 255.0
 
     for q in qualities:
         jpeg_path = os.path.join(output_dir, f"{basename}_q{q}.jpg")
@@ -215,39 +213,11 @@ def analyze_jpeg_artifacts(img_8bit, output_dir, basename, qualities=(95, 75, 50
         # Taille du fichier en Ko
         sizes[q] = os.path.getsize(jpeg_path) / 1024.0
 
-        # Comparer avec PNG (quantitativement)
-        jpeg_img = np.array(Image.open(jpeg_path), dtype=np.float32) / 255.0
-        mse = np.mean((img_float - jpeg_img) ** 2)
-        mse_values[q] = mse
-
-    # Générer un graphique taille vs qualité
-    fig, ax1 = plt.subplots(figsize=(6, 4))
-    ax2 = ax1.twinx()
-
-    ax1.plot(list(sizes.keys()), list(sizes.values()), 'o-', color='tab:blue', label="Taille JPEG (Ko)")
-    ax2.plot(list(mse_values.keys()), list(mse_values.values()), 's--', color='tab:red', label="MSE vs PNG")
-
-    ax1.set_xlabel("Qualité JPEG")
-    ax1.set_ylabel("Taille du fichier (Ko)", color='tab:blue')
-    ax2.set_ylabel("MSE vs PNG", color='tab:red')
-    ax1.set_xticks(qualities)
-    ax1.set_title(f"Analyse des artefacts JPEG - {basename}")
-
-    ax1.legend(loc="upper left")
-    ax2.legend(loc="upper right")
-
-    plt.tight_layout()
-    plot_path = os.path.join(output_dir, f"{basename}_jpeg_analysis.png")
-    plt.savefig(plot_path)
-    plt.close()
-
-    print(f"  Analyse JPEG terminée → graphique sauvegardé: {plot_path}")
+    print("  Analyse JPEG terminée (tailles uniquement)")
 
     return {
         "jpeg_sizes_Ko": sizes,
-        "mse_vs_png": mse_values,
         "png_path": png_path,
-        "plot_path": plot_path,
     }
 
 
@@ -274,9 +244,11 @@ def plot_global_jpeg_size_vs_quality(
     std_sizes = [np.std(global_jpeg_sizes[q]) for q in qualities]
 
     mean_png_size = np.mean(global_png_sizes)
+    std_png_size = np.std(global_png_sizes)
 
     fig, ax = plt.subplots(figsize=(6, 4))
 
+    # Courbe JPEG
     ax.plot(
         qualities,
         mean_sizes,
@@ -291,16 +263,23 @@ def plot_global_jpeg_size_vs_quality(
         np.array(mean_sizes) + std_sizes,
         alpha=0.25,
         color="tab:blue",
-        label="± écart-type",
+        label="JPEG ± écart-type",
     )
 
     # Ligne PNG de référence
+    ax.axhspan(
+        mean_png_size - std_png_size,
+        mean_png_size + std_png_size,
+        color="tab:green",
+        alpha=0.2,
+        label="PNG ± écart-type",
+    )
     ax.axhline(
         mean_png_size,
         color="tab:green",
         linestyle="--",
         linewidth=2,
-        label="PNG (sans perte, moyenne)",
+        label="Taille moyenne PNG",
     )
 
     ax.set_xlabel("Qualité JPEG")
