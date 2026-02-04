@@ -446,9 +446,11 @@ def process_white_balance(
                 os.path.join(output_dir, f"{basename}_camera_xyz.tiff"),
             )
 
-            # Figures de comparaison
+            # Figures de comparaison (pas XYZ)
             comparison = {
                 "Original": {"image": image, "multipliers": (1.0, 1.0, 1.0)},
+                "Auto Neutre": {"image": wb_auto, "multipliers": mult_auto},
+                "Grey World": {"image": wb_grey_world, "multipliers": mult_gw},
                 "Caméra": {"image": wb_camera, "multipliers": mult_cam},
             }
 
@@ -459,7 +461,13 @@ def process_white_balance(
                 title=f"Balance des Blancs - {basename}",
             )
 
-            xyz_comparison = {"Caméra": {"rgb": wb_camera, "xyz": xyz_camera}}
+            # Figures de comparaison (XYZ)
+            xyz_comparison = {
+                "Auto Neutre": {"rgb": wb_auto, "xyz": xyz_auto},
+                "Grey World": {"rgb": wb_grey_world, "xyz": xyz_gw},
+                "Caméra": {"rgb": wb_camera, "xyz": xyz_camera},
+            }
+            
             create_xyz_comparison_figure(
                 xyz_comparison,
                 os.path.join(output_dir, f"{basename}_xyz_comparison.png"),
