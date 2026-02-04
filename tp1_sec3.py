@@ -17,9 +17,10 @@ Usage:
     python tp1_sec3.py --input-dir images_intermediaires_sec2 --output-dir images_intermediaires_sec3
 """
 
-import numpy as np
 import glob
 import os
+
+import numpy as np
 
 from tp1_io import (
     load_tiff,
@@ -60,22 +61,49 @@ def find_neutral_region(image, region_size=11):
 
     Returns:
         (y, x): Position du centre de la meilleure région neutre
-
-    TODO: Implémenter l'algorithme de sélection automatique de région neutre
-
-    Algorithme:
-    1. Parcourir l'image par pas réguliers (ex: max(region_size, 20) pixels)
-    2. Pour chaque région, calculer:
-       - Luminosité moyenne: 0.299*R + 0.587*G + 0.114*B
-       - Neutralité: 1.0 / (1.0 + std(means) * 10)
-       - Score combiné: luminosité × neutralité
-    3. Garder la région avec le meilleur score (si luminosité > 0.2)
     """
-    # =========================================================================
-    # TODO: Implémenter la sélection automatique de région neutre
-    # =========================================================================
+    step = 20
+    image_height, image_width, _ = image.shape
+    half_region_size = region_size // 2
 
-    raise NotImplementedError("Sélection automatique de région neutre à implémenter")
+    best_score = -np.inf
+    best_position = (image_height // 2, image_width // 2)  # fallback si rien trouvé
+
+    for y in range(half_region_size, image_height - half_region_size, step):
+        for x in range(half_region_size, image_width - half_region_size, step):
+
+            region = image[
+                y - half_region_size: y + half_region_size + 1,
+                x - half_region_size: x + half_region_size + 1,
+                :
+            ]
+
+            # Moyenne par canal
+            mean_rgb = np.mean(region, axis=(0, 1))
+            mean_red, mean_green, mean_blue = mean_rgb
+
+            # Luminosité moyenne
+            luminance = (
+                    0.299 * mean_red +
+                    0.587 * mean_green +
+                    0.114 * mean_blue
+            )
+
+            if luminance <= 0.2:
+                continue
+
+            # Neutralité (écart-type entre R, G, B)
+            color_standard_deviation = np.std(mean_rgb)
+            neutrality = 1.0 / (1.0 + color_standard_deviation * 10.0)
+
+            # Score combiné
+            score = luminance * neutrality
+
+            if score > best_score:
+                best_score = score
+                best_position = (y, x)
+
+    return best_position
 
 
 def white_balance_auto_neutral(image, region_size=11, target_gray=0.5):
@@ -94,24 +122,42 @@ def white_balance_auto_neutral(image, region_size=11, target_gray=0.5):
         corrected: Image corrigée
         multipliers: Tuple (mult_R, mult_G, mult_B)
         neutral_pos: Position (y, x) de la région neutre sélectionnée
-
-    TODO: Implémenter la balance des blancs par région neutre automatique
-
-    Indices:
-    1. Utiliser find_neutral_region() pour trouver la région neutre
-    2. Extraire la région autour de cette position
-    3. Calculer la moyenne de chaque canal R, G, B dans cette région
-    4. Calculer les multiplicateurs: mult_X = target_gray / mean_X
-    5. Appliquer les multiplicateurs à toute l'image
-    6. Clipper à [0, 1]
     """
-    # =========================================================================
-    # TODO: Implémenter la balance des blancs par région neutre automatique
-    # =========================================================================
 
+    # 1. Trouver la position de la région neutre
     neutral_pos = find_neutral_region(image, region_size)
+    center_y, center_x = neutral_pos
 
-    raise NotImplementedError("Balance des blancs automatique à implémenter")
+    half_region_size = region_size // 2
+
+    # 2. Extraire la région neutre
+    neutral_region = image[
+        center_y - half_region_size: center_y + half_region_size + 1,
+        center_x - half_region_size: center_x + half_region_size + 1,
+        :
+    ]
+
+    # 3. Moyenne de chaque canal dans la région
+    mean_rgb = np.mean(neutral_region, axis=(0, 1))
+    mean_red, mean_green, mean_blue = mean_rgb
+
+    # 4. Calcul des multiplicateurs de correction
+    mult_red = target_gray / (mean_red + 1e-6)
+    mult_green = target_gray / (mean_green + 1e-6)
+    mult_blue = target_gray / (mean_blue + 1e-6)
+
+    multipliers = (mult_red, mult_green, mult_blue)
+
+    # 5. Application des multiplicateurs à l'image entière
+    corrected = image.copy()
+    corrected[:, :, 0] *= mult_red
+    corrected[:, :, 1] *= mult_green
+    corrected[:, :, 2] *= mult_blue
+
+    # 6. Clipping dans l'intervalle [0, 1]
+    corrected = np.clip(corrected, 0.0, 1.0)
+
+    return corrected, multipliers, neutral_pos
 
 
 def white_balance_grey_world(image):
@@ -128,20 +174,31 @@ def white_balance_grey_world(image):
         corrected: Image corrigée
         multipliers: Tuple (mult_R, mult_G, mult_B)
 
-    TODO: Implémenter l'algorithme Grey World
+ """
 
-    Indices:
-    1. Calculer la moyenne de chaque canal sur toute l'image
-    2. Utiliser la moyenne du vert comme référence (canal le plus fiable en Bayer)
-    3. Calculer les multiplicateurs: mult_X = mean_G / mean_X
-    4. Appliquer les multiplicateurs à toute l'image
-    5. Clipper à [0, 1]
-    """
-    # =========================================================================
-    # TODO: Implémenter l'algorithme Grey World
-    # =========================================================================
+    # 1) Calculer la moyenne de chaque canal sur toute l'image
+    mean_R = np.mean(image[:, :, 0])
+    mean_G = np.mean(image[:, :, 1])
+    mean_B = np.mean(image[:, :, 2])
 
-    raise NotImplementedError("Grey World à implémenter")
+    # 2) Utiliser la moyenne du vert comme référence
+    ref = mean_G
+
+    # 3) Calculer les multiplicateurs
+    mult_R = ref / (mean_R + 1e-8)  # petit epsilon pour éviter division par 0
+    mult_G = ref / (mean_G + 1e-8)
+    mult_B = ref / (mean_B + 1e-8)
+
+    # 4) Appliquer les multiplicateurs à toute l'image
+    corrected = image.copy()
+    corrected[:, :, 0] *= mult_R
+    corrected[:, :, 1] *= mult_G
+    corrected[:, :, 2] *= mult_B
+
+    # 5) Clipper à [0, 1]
+    corrected = np.clip(corrected, 0.0, 1.0)
+
+    return corrected, (mult_R, mult_G, mult_B)
 
 
 def white_balance_camera(image, camera_wb):
@@ -305,10 +362,10 @@ def generate_report(results, output_dir):
 
 
 def process_white_balance(
-    input_dir="images_intermediaires_sec2",
-    metadata_dir="images_intermediaires_sec1",
-    output_dir="images_intermediaires_sec3",
-    input_suffix="_bilinear.tiff",
+        input_dir="images_intermediaires_sec2",
+        metadata_dir="images_intermediaires_sec1",
+        output_dir="images_intermediaires_sec3",
+        input_suffix="_bilinear.tiff",
 ):
     """Traiter toutes les images dématricées et appliquer la balance des blancs."""
     os.makedirs(output_dir, exist_ok=True)
@@ -319,9 +376,9 @@ def process_white_balance(
         print(f"Aucun fichier *{input_suffix} trouvé dans {input_dir}/")
         return
 
-    print(f"\n{'#'*60}")
+    print(f"\n{'#' * 60}")
     print("# Section 3: Balance des Blancs")
-    print(f"{'#'*60}")
+    print(f"{'#' * 60}")
     print(f"\n{len(tiff_files)} fichier(s) TIFF trouvé(s)")
 
     results = []
@@ -334,7 +391,7 @@ def process_white_balance(
             print(f"  Ignoré {basename}: métadonnées non trouvées")
             continue
 
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"Traitement: {basename}")
         print("=" * 60)
 
@@ -412,7 +469,7 @@ def process_white_balance(
     if results:
         generate_report(results, output_dir)
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Terminé! {len(results)} image(s) traitée(s) → {output_dir}/")
     print("=" * 60)
 

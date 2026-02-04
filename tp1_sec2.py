@@ -386,6 +386,7 @@ def generate_report(results, output_dir):
         Disponible à https://www.scirp.org/journal/paperinformation?paperid=90911.
         </p>
         """
+    )
 
     content += section(
         "Discussion",
