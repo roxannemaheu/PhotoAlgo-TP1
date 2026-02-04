@@ -615,12 +615,32 @@ Disponible à https://www.scirp.org/journal/paperinformation?paperid=90911.
     sec3_content = ""
 
     # Texte d'introduction pour la section 3
+    sec3_raw_intro_text = textwrap.dedent("""
+Les images RAW enregistrent fidèlement la couleur de la lumière telle qu’elle arrive sur le capteur, 
+laquelle dépend fortement du type d’éclairage (ex: chaud ou froid).
+La balance des blancs consiste alors à corriger les canaux RVB afin que les surfaces neutres restent neutres dans l’image finale. 
+Plusieurs algorithmes peuvent être utilisés pour y arriver. J'en ai testé 2 dans le présent TP, que j'ai comparé à la balance des blancs caméra.
+
+L’algorithme de la région neutre repose sur l’identification d’une zone supposée grise ou blanche dans l’image. 
+Cette zone pourrait être déterminée manuellement (par un clic), mais pour ce TP, elle est déterminée automatiquement avec un algorithme. 
+Cet algorithme consiste à parcourir l'image à intervalles réguliers (20 pixels) 
+et analyser à chaque endroit la luminosité (pour écarter les zones trop sombres) 
+et la neutralité de la couleur (en cherchant le plus petit écart-type entre les composantes R, G et B). On cherche la zone la plus neutre possible.
+Les gains des canaux RVB sont ensuite ajustés pour rendre cette zone complètement neutre, ce qui donne de bons résultats lorsque la détection est correcte,
+mais peut théoriquement échouer en l’absence de référence réellement neutre.
+
+L’algorithme Grey World suppose que la moyenne des couleurs de l’image doit être grise (neutre).
+Il équilibre les canaux RVB en fonction de cette hypothèse, ce qui le rend simple et efficace sur des scènes variées,
+mais théoriquement peu fiable pour des images dominées par une couleur particulière.
+
+La balance des blancs caméra s’appuie sur des modèles du capteur et des préréglages liés aux conditions d’éclairage. 
+Les paramètres à utiliser dans les calculs sont fournis par les métadonnées des photos.
+Elle est rapide et robuste dans la majorité des cas, mais reste théoriquement limitée face à des éclairages complexes ou non standards.
+    """)
+
     sec3_content += subsection(
         "Introduction",
-        '<div style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #e94560;">'
-        '<p style="color: #a0a0a0; font-style: italic;">À remplir: Expliquez le concept de balance des blancs, '
-        'les différents algorithmes implémentés (région neutre, Grey World, caméra), et leurs avantages/inconvénients.</p>'
-        '</div>'
+        make_styled_paragraphs(sec3_raw_intro_text)
     )
 
     for basename in basenames:
@@ -647,13 +667,37 @@ Disponible à https://www.scirp.org/journal/paperinformation?paperid=90911.
         if sec3_img_content:
             sec3_content += section(f"Image: {basename}", sec3_img_content)
 
-    # Analyse et observations
+        # Analyse et observations
+        sec3_raw_analyse_text = textwrap.dedent("""
+    COMPARAISON VISUELLE DES DIFFÉRENTES MÉTHODES DE BALANCE DES BLANCS ET DISCUSSION SUR LES MULTIPLICATEURS CALCULÉS
+    Sur certaines photos, les trois méthodes donnent un résultat presqu'identique (par exemple, a0011-DSC_0082 - image désertique). 
+    Probablement que c'est parce que les couleurs de la photo originale sont majoritairement neutres et les canaux R, G et B sont relativement équilibrées.
+   
+    Sur d'autres photos, les résultats sont vraiment différents selon la méthode. 
+    Par exemple, sur l'image a0026-kme_391 (le tunnel), plutôt monochrome, la photo originale est jaunâtre. 
+    Auto Neutre reste jaunâtre, probablement car aucune zone de la photo n'est vraiment neutre, ce qui fait que la région utilisée pour le recalibrage est jaunâtre.
+    Grey World devient grisatre, car la moyenne de la scène n'est probablement pas grise. 
+    La méthode compense en réduisant les canaux dominants (R et G), ce qui donne une image grisatre.
+    Finalement, avec la méthode Caméra, la photo devient orangé, ce qui se rapproche probablement plus du rendu "naturel".
+    
+    Globalement, la méthode Grey World fonctionne parfois, mais lorsqu'elle se trompe, elle donne des résultats très erronés (par exemple, une abeille qui devient bleu). 
+    Je dirais que c'est la moins fiable des trois. 
+    
+    Auto Neutre n'est pas non plus très fiable. Probablement qu'en cliquant manuellement, ce serait plus fastidieux, mais ça donnerait de meilleurs résultats.
+
+    La méthode Caméra semble être la plus fiable sur des conditions d'éclairage variées.
+
+    EXPLICATION DE LA CONVERSION VERS L'ESPACE XYZ
+    Après le dématriçage, l'espace de couleur est "RGB de la caméra", qui n'est pas un espace standard. 
+    Le manufacturier donne la matrice de conversion vers XYZ.
+    La conversion vers l’espace XYZ permet de représenter les couleurs de manière indépendante du dispositif, 
+    facilitant ensuite la conversion vers le format de notre choix (par exemple sRGB) tout en respectant les standards colorimétriques.
+    Ci-dessus, on voit notamment les images converties en XYZ, puis reconverties en sRGB pour permettre de les afficher. 
+    Le rendu visuel est différent, car la reconversion en sRGB nécessite des ajustements, surtout parfois des couleurs "tronquées" et une correction gamma.
+            """)
     sec3_content += subsection(
         "Analyse et observations",
-        '<div style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #e94560;">'
-        '<p style="color: #a0a0a0; font-style: italic;">À remplir: Comparez les résultats des différentes méthodes de balance des blancs. '
-        'Discutez des multiplicateurs calculés et de leur impact visuel. Expliquez la conversion vers l\'espace XYZ.</p>'
-        '</div>'
+        make_styled_paragraphs(sec3_raw_analyse_text)
     )
 
     content += section("Section 3: Balance des Blancs (White Balance)", sec3_content, icon="⚪")

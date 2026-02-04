@@ -7,10 +7,10 @@ Ce script:
 1. Charge les images TIFF dématricées depuis ./images_intermediaires_sec2/*_bilinear.tiff
 2. Charge les métadonnées depuis ./images_intermediaires_sec1/*.json
 3. Applique les algorithmes de balance des blancs:
-   A) Manuelle (clic sur région neutre) - À IMPLÉMENTER
-   B) Grey World - À IMPLÉMENTER
-   C) Proposé par la caméra - IMPLÉMENTÉ
-4. Convertit en espace XYZ - IMPLÉMENTÉ
+   A) Manuelle (sélection automatique de région neutre)
+   B) Grey World
+   C) Proposé par la caméra
+4. Convertit en espace XYZ
 5. Sauvegarde dans ./images_intermediaires_sec3/
 
 Usage:
@@ -365,7 +365,7 @@ def process_white_balance(
         input_dir="images_intermediaires_sec2",
         metadata_dir="images_intermediaires_sec1",
         output_dir="images_intermediaires_sec3",
-        input_suffix="_bilinear.tiff",
+        input_suffix="_malvar.tiff",
 ):
     """Traiter toutes les images dématricées et appliquer la balance des blancs."""
     os.makedirs(output_dir, exist_ok=True)
@@ -467,7 +467,7 @@ def process_white_balance(
                 "Grey World": {"rgb": wb_grey_world, "xyz": xyz_gw},
                 "Caméra": {"rgb": wb_camera, "xyz": xyz_camera},
             }
-            
+
             create_xyz_comparison_figure(
                 xyz_comparison,
                 os.path.join(output_dir, f"{basename}_xyz_comparison.png"),
