@@ -19,9 +19,10 @@ Usage:
     python tp1_sec4.py --input-dir images_intermediaires_sec3 --output-dir images_intermediaires_sec4
 """
 
-import numpy as np
 import glob
 import os
+
+import numpy as np
 from PIL import Image
 
 from tp1_io import (
@@ -80,27 +81,25 @@ def adjust_brightness(xyz_image, percentile=99):
     # TODO: Implémenter l'ajustement de luminosité par le 99e percentile
     # =========================================================================
     Y = xyz_image[:, :, 1]
-    
+
     # Compute the percentile of luminance (excluding zeros/negatives)
     valid_Y = Y[Y > 0]
     if len(valid_Y) == 0:
         print("    Warning: No valid luminance values, skipping brightness adjustment")
         return xyz_image.copy()
-    
+
     percentile_value = np.percentile(valid_Y, percentile)
-    
+
     if percentile_value <= 0:
         print("    Warning: Percentile value <= 0, skipping brightness adjustment")
         return xyz_image.copy()
-    
+
     # Divide the entire image by the percentile value
     adjusted = xyz_image / percentile_value
-    
-    print(f"    Brightness adjustment: divided by {percentile_value:.6f} (1st percentile)")
-    
-    return adjusted
 
-    raise NotImplementedError("Ajustement de luminosité à implémenter")
+    print(f"    Brightness adjustment: divided by {percentile_value:.6f} (1st percentile)")
+
+    return adjusted
 
 
 # =============================================================================
@@ -146,12 +145,27 @@ def tonemap_reinhard(xyz_image):
     4. Appliquer ce ratio à X et Z également
     5. Retourner l'image résultante
     """
-    # =========================================================================
-    # TODO: Implémenter le mappage tonal de Reinhard
-    # =========================================================================
-    return xyz_image.copy()/(1 + xyz_image)
 
-    raise NotImplementedError("Reinhard à implémenter")
+    # Copier l'image pour ne pas modifier l'entrée
+    result = xyz_image.copy()
+
+    # 1. Extraire le canal Y (luminance)
+    Y = xyz_image[:, :, 1]
+
+    # 2. Appliquer la formule de Reinhard sur Y
+    Y_mapped = Y / (1.0 + Y)
+
+    # 3. Calculer le facteur d'échelle (éviter division par zéro)
+    scale = np.ones_like(Y)
+    mask = Y > 0
+    scale[mask] = Y_mapped[mask] / Y[mask]
+
+    # 4. Appliquer ce ratio à X, Y et Z
+    result[:, :, 0] *= scale  # X
+    result[:, :, 1] = Y_mapped  # Y (remplacé directement)
+    result[:, :, 2] *= scale  # Z
+
+    return result
 
 
 # =============================================================================
@@ -192,9 +206,9 @@ def save_png(img_8bit, filepath):
 def analyze_dynamic_range(image_linear):
     """Analyser l'écrêtage des hautes lumières et l'écrasement des ombres."""
     lum = (
-        0.2126 * image_linear[:, :, 0]
-        + 0.7152 * image_linear[:, :, 1]
-        + 0.0722 * image_linear[:, :, 2]
+            0.2126 * image_linear[:, :, 0]
+            + 0.7152 * image_linear[:, :, 1]
+            + 0.0722 * image_linear[:, :, 2]
     )
 
     highlight_pct = np.sum(lum >= 0.99) / lum.size * 100
@@ -240,31 +254,31 @@ def generate_report(results, output_dir):
         base_dir = os.path.dirname(output_dir) or "."
     else:
         base_dir = output_dir
-    
+
     sec1_dir = os.path.join(base_dir, "images_intermediaires_sec1")
     sec2_dir = os.path.join(base_dir, "images_intermediaires_sec2")
     sec3_dir = os.path.join(base_dir, "images_intermediaires_sec3")
     sec4_dir = output_dir
-    
+
     # Obtenir la liste des basenames (noms de fichiers sans extension)
     basenames = [result["basename"] for result in results] if results else []
-    
+
     # Si aucun résultat, chercher les fichiers dans les répertoires
     if not basenames:
         # Chercher dans sec1
         tiff_files = glob.glob(os.path.join(sec1_dir, "*.tiff"))
         basenames = [os.path.splitext(os.path.basename(f))[0] for f in tiff_files if "zoom" not in f]
         basenames = list(set(basenames))  # Dédupliquer
-    
+
     # Limiter à 2 images d'exemple pour rendre le rapport plus court
     basenames = sorted(basenames)[:2]
     content = ""
-    
+
     # =============================================================================
     # SECTION 1: Chargement et Compréhension des Données RAW
     # =============================================================================
     sec1_content = ""
-    
+
     # Texte d'introduction pour la section 1
     sec1_content += subsection(
         "Introduction",
@@ -273,10 +287,10 @@ def generate_report(results, output_dir):
         'du motif de Bayer, et de la normalisation des données brutes.</p>'
         '</div>'
     )
-    
+
     for basename in basenames:
         sec1_img_content = ""
-        
+
         # Figure: Zoom sur la mosaïque Bayer
         zoom_path = os.path.join(sec1_dir, f"{basename}_zoom16x16.png")
         if os.path.exists(zoom_path):
@@ -285,10 +299,10 @@ def generate_report(results, output_dir):
                 figure(f"../images_intermediaires_sec1/{basename}_zoom16x16.png",
                        "Zoom sur une région 16×16 montrant les valeurs normalisées et le motif de Bayer coloré.")
             )
-        
+
         if sec1_img_content:
             sec1_content += section(f"Image: {basename}", sec1_img_content)
-    
+
     # Analyse et observations
     sec1_content += subsection(
         "Analyse et observations",
@@ -297,14 +311,14 @@ def generate_report(results, output_dir):
         'le motif de Bayer, et la normalisation.</p>'
         '</div>'
     )
-    
+
     content += section("Section 1: Chargement et Compréhension des Données RAW", sec1_content, icon="📷")
-    
+
     # =============================================================================
     # SECTION 2: Dématriçage (Demosaicking)
     # =============================================================================
     sec2_content = ""
-    
+
     # Texte d'introduction pour la section 2
     sec2_content += subsection(
         "Introduction",
@@ -313,10 +327,10 @@ def generate_report(results, output_dir):
         'les différences entre les méthodes bilinéaire et Malvar-He-Cutler, et les artefacts observés.</p>'
         '</div>'
     )
-    
+
     for basename in basenames:
         sec2_img_content = ""
-        
+
         # Figure: Comparaison des méthodes
         comp_path = os.path.join(sec2_dir, f"{basename}_comparison.png")
         if os.path.exists(comp_path):
@@ -325,7 +339,7 @@ def generate_report(results, output_dir):
                 figure(f"../images_intermediaires_sec2/{basename}_comparison.png",
                        "Comparaison des méthodes de dématriçage")
             )
-        
+
         # Figure: Zoom sur les artefacts
         zoom_path = os.path.join(sec2_dir, f"{basename}_zoom.png")
         if os.path.exists(zoom_path):
@@ -334,10 +348,10 @@ def generate_report(results, output_dir):
                 figure(f"../images_intermediaires_sec2/{basename}_zoom.png",
                        "Recadrages montrant les artefacts de contour")
             )
-        
+
         if sec2_img_content:
             sec2_content += section(f"Image: {basename}", sec2_img_content)
-    
+
     # Analyse et observations
     sec2_content += subsection(
         "Analyse et observations",
@@ -346,14 +360,14 @@ def generate_report(results, output_dir):
         'Discutez des métriques de qualité (PSNR, SSIM) et des temps d\'exécution. Identifiez les régions où les artefacts sont les plus visibles.</p>'
         '</div>'
     )
-    
+
     content += section("Section 2: Dématriçage (Demosaicking)", sec2_content, icon="🎨")
-    
+
     # =============================================================================
     # SECTION 3: Balance des Blancs (White Balance)
     # =============================================================================
     sec3_content = ""
-    
+
     # Texte d'introduction pour la section 3
     sec3_content += subsection(
         "Introduction",
@@ -362,10 +376,10 @@ def generate_report(results, output_dir):
         'les différents algorithmes implémentés (région neutre, Grey World, caméra), et leurs avantages/inconvénients.</p>'
         '</div>'
     )
-    
+
     for basename in basenames:
         sec3_img_content = ""
-        
+
         # Figure: Comparaison des méthodes
         comp_path = os.path.join(sec3_dir, f"{basename}_comparison.png")
         if os.path.exists(comp_path):
@@ -374,7 +388,7 @@ def generate_report(results, output_dir):
                 figure(f"../images_intermediaires_sec3/{basename}_comparison.png",
                        "Comparaison des méthodes de balance des blancs")
             )
-        
+
         # Figure: Conversion XYZ
         xyz_path = os.path.join(sec3_dir, f"{basename}_xyz_comparison.png")
         if os.path.exists(xyz_path):
@@ -383,10 +397,10 @@ def generate_report(results, output_dir):
                 figure(f"../images_intermediaires_sec3/{basename}_xyz_comparison.png",
                        "Images converties en XYZ puis reconverties en sRGB")
             )
-        
+
         if sec3_img_content:
             sec3_content += section(f"Image: {basename}", sec3_img_content)
-    
+
     # Analyse et observations
     sec3_content += subsection(
         "Analyse et observations",
@@ -395,14 +409,14 @@ def generate_report(results, output_dir):
         'Discutez des multiplicateurs calculés et de leur impact visuel. Expliquez la conversion vers l\'espace XYZ.</p>'
         '</div>'
     )
-    
+
     content += section("Section 3: Balance des Blancs (White Balance)", sec3_content, icon="⚪")
-    
+
     # =============================================================================
     # SECTION 4: Mappage Tonal et Encodage d'Affichage
     # =============================================================================
     sec4_content = ""
-    
+
     # Texte d'introduction pour la section 4
     sec4_content += subsection(
         "Introduction",
@@ -411,7 +425,7 @@ def generate_report(results, output_dir):
         'les différents opérateurs (linéaire, Reinhard), l\'OETF sRGB, et l\'analyse de la plage dynamique.</p>'
         '</div>'
     )
-    
+
     # Concepts et algorithmes
     algorithms = algorithm_box(
         "A) Ajustement de luminosité",
@@ -435,9 +449,9 @@ def generate_report(results, output_dir):
         "E) Analyse des artefacts JPEG",
         "<p>Sauvegarde en différentes qualités et analyse des artefacts. <strong>À IMPLÉMENTER PAR L'ÉTUDIANT</strong></p>",
     )
-    
+
     sec4_content += subsection("Concepts et algorithmes", algorithms)
-    
+
     # Figure: Courbes de mappage tonal
     curves_path = os.path.join(sec4_dir, "tonemapping_curves.png")
     if os.path.exists(curves_path):
@@ -445,7 +459,7 @@ def generate_report(results, output_dir):
             "Courbes de mappage tonal",
             figure("tonemapping_curves.png", "Comparaison des courbes de réponse")
         )
-    
+
     # Figures pour chaque image
     # Utiliser results si disponible, sinon utiliser basenames
     # Filtrer pour ne garder que les 2 images sélectionnées
@@ -453,13 +467,13 @@ def generate_report(results, output_dir):
         images_to_process = [r for r in results if r["basename"] in basenames]
     else:
         images_to_process = [{"basename": bn} for bn in basenames]
-    
+
     for result in images_to_process:
         basename = result["basename"]
         dr = result.get("dynamic_range", {})
-        
+
         sec4_img_content = ""
-        
+
         # Figure: Comparaison des opérateurs
         comp_path = os.path.join(sec4_dir, f"{basename}_tonemapping_comparison.png")
         if os.path.exists(comp_path):
@@ -470,7 +484,7 @@ def generate_report(results, output_dir):
                     "Comparaison: Linéaire, Reinhard",
                 ),
             )
-        
+
         # Figure: Avant/Après OETF
         oetf_path = os.path.join(sec4_dir, f"{basename}_oetf_comparison.png")
         if os.path.exists(oetf_path):
@@ -481,7 +495,7 @@ def generate_report(results, output_dir):
                     "L'OETF encode les valeurs linéaires pour l'affichage",
                 ),
             )
-        
+
         # Figure: Image finale
         final_path = os.path.join(sec4_dir, f"{basename}_final.jpg")
         if os.path.exists(final_path):
@@ -489,7 +503,7 @@ def generate_report(results, output_dir):
                 "Image finale",
                 figure(f"{basename}_final.jpg", "Image JPEG finale (qualité 95)"),
             )
-        
+
         # Figure: Plage dynamique
         dr_path = os.path.join(sec4_dir, f"{basename}_dynamic_range.png")
         if os.path.exists(dr_path):
@@ -515,39 +529,39 @@ def generate_report(results, output_dir):
                     f"{basename}_dynamic_range.png", "Analyse des hautes lumières et ombres"
                 ) + dr_table,
             )
-        
+
         if sec4_img_content:
             sec4_content += section(basename, sec4_img_content)
-    
+
     # Analyse et observations
     sec4_content += subsection(
-        "Analyse et observations", 
+        "Analyse et observations",
         '<div style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #778da9;">'
         '<p style="color: #a0a0a0; font-style: italic;">À remplir: Comparez les résultats des différents opérateurs de mappage tonal. '
         'Discutez de l\'impact de l\'OETF sur l\'apparence de l\'image. Analysez la plage dynamique et les zones écrêtées/écrasées. '
         'Discutez des artefacts JPEG à différentes qualités.</p>'
         '</div>'
     )
-    
+
     content += section("Section 4: Mappage Tonal et Encodage d'Affichage", sec4_content, icon="🎨")
-    
+
     # =============================================================================
     # GRILLE DE COMPARAISON DES IMAGES FINALES
     # =============================================================================
     # Collecter toutes les images finales JPG de la section 4 et leurs références
     comparisons = []
     jpg_files = sorted(glob.glob(os.path.join(sec4_dir, "*_final.jpg")))
-    
+
     for jpg_path in jpg_files:
         basename = os.path.basename(jpg_path).replace("_final.jpg", "")
         final_src = os.path.basename(jpg_path)
-        
+
         # Chercher l'image de référence correspondante
         reference_src = None
         srgb_path = os.path.join(sec1_dir, f"{basename}_srgb.jpg")
         if os.path.exists(srgb_path):
             reference_src = f"../images_intermediaires_sec1/{basename}_srgb.jpg"
-        
+
         if reference_src:
             comparisons.append({
                 "basename": basename,
@@ -565,7 +579,7 @@ def generate_report(results, output_dir):
                 "final_alt": f"Image finale - {basename}",
                 "reference_alt": f"Image finale - {basename}"
             })
-    
+
     if comparisons:
         grid_content = subsection(
             "Comparaison: Vos résultats vs Références sRGB",
@@ -573,7 +587,7 @@ def generate_report(results, output_dir):
         )
         grid_content += comparison_grid(comparisons)
         content += section("Comparaison des Images Finales", grid_content, icon="🖼️")
-    
+
     # =============================================================================
     # CONCLUSION GÉNÉRALE
     # =============================================================================
@@ -585,9 +599,9 @@ def generate_report(results, output_dir):
         'Comparez vos résultats avec les images de référence.</p>'
         '</div>'
     )
-    
+
     content += section("Conclusion", conclusion_content, icon="📝")
-    
+
     # Générer le document HTML final
     html = html_document(
         "Rapport TP1 - &lt;votre nom&gt;",
@@ -596,7 +610,7 @@ def generate_report(results, output_dir):
         content,
         accent_color="#778da9",
     )
-    
+
     save_report(html, os.path.join(output_dir, "rapport_complet.html"))
 
 
@@ -606,9 +620,9 @@ def generate_report(results, output_dir):
 
 
 def process_display_encoding(
-    input_dir="images_intermediaires_sec3",
-    output_dir="images_intermediaires_sec4",
-    input_suffix="_camera_xyz.tiff",
+        input_dir="images_intermediaires_sec3",
+        output_dir="images_intermediaires_sec4",
+        input_suffix="_camera_xyz.tiff",
 ):
     """Traiter les images XYZ avec mappage tonal et encodage d'affichage."""
     os.makedirs(output_dir, exist_ok=True)
@@ -619,9 +633,9 @@ def process_display_encoding(
         print(f"Aucun fichier *{input_suffix} trouvé dans {input_dir}/")
         return
 
-    print(f"\n{'#'*60}")
+    print(f"\n{'#' * 60}")
     print("# Section 4: Mappage Tonal et Encodage d'Affichage")
-    print(f"{'#'*60}")
+    print(f"{'#' * 60}")
     print(f"\n{len(tiff_files)} fichier(s) trouvé(s)")
 
     # Générer la figure des courbes une seule fois
@@ -632,7 +646,7 @@ def process_display_encoding(
     for tiff_path in tiff_files:
         basename = os.path.basename(tiff_path).replace(input_suffix, "")
 
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"Traitement: {basename}")
         print("=" * 60)
 
@@ -721,7 +735,7 @@ def process_display_encoding(
     if results:
         generate_report(results, output_dir)
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Terminé! {len(results)} image(s) traitée(s) → {output_dir}/")
     print("=" * 60)
 
