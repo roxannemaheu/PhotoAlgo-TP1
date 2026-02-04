@@ -24,6 +24,7 @@ import os
 
 import numpy as np
 from PIL import Image
+from matplotlib import pyplot as plt
 
 from tp1_io import (
     load_tiff,
@@ -45,7 +46,7 @@ from tp1_rapport import (
     create_tonemapping_curves_figure,
     create_tonemapping_comparison_figure,
     create_oetf_comparison_figure,
-    create_dynamic_range_figure,
+    create_dynamic_range_figure, find_edge_region,
 )
 
 
@@ -67,19 +68,7 @@ def adjust_brightness(xyz_image, percentile=99):
 
     Returns:
         Image XYZ avec luminosité ajustée
-
-    TODO: Implémenter l'ajustement de luminosité
-
-    Indices:
-    1. Extraire le canal Y (luminance): Y = xyz_image[:, :, 1]
-    2. Filtrer les valeurs valides (Y > 0)
-    3. Calculer le percentile spécifié des valeurs valides
-    4. Diviser toute l'image par cette valeur
-    5. Retourner l'image ajustée
     """
-    # =========================================================================
-    # TODO: Implémenter l'ajustement de luminosité par le 99e percentile
-    # =========================================================================
     Y = xyz_image[:, :, 1]
 
     # Compute the percentile of luminance (excluding zeros/negatives)
@@ -196,6 +185,147 @@ def save_png(img_8bit, filepath):
     """
     Image.fromarray(img_8bit, mode="RGB").save(filepath, "PNG")
     print(f"  Saved PNG: {filepath}")
+
+
+# =============================================================================
+# Analyse des artefacts JPEG
+# =============================================================================
+
+def analyze_jpeg_artifacts(img_8bit, output_dir, basename, qualities=(95, 75, 50, 25)):
+    """
+    Analyse des artefacts JPEG pour une image linéaire sRGB.
+
+    Args:
+        img_8bit: Image sRGB uint8 [H, W, 3], 0-255
+        output_dir: Répertoire où sauvegarder les JPEG/PNG
+        basename: Nom de base pour les fichiers
+        qualities: Liste de qualités JPEG à tester
+
+    Returns:
+        dict: informations sur la taille des fichiers et différences avec PNG
+    """
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Sauvegarder PNG (sans perte)
+    png_path = os.path.join(output_dir, f"{basename}_reference.png")
+    save_png(img_8bit, png_path)
+
+    sizes = {}
+    mse_values = {}
+
+    # Convertir img_8bit en float [0-1] pour le calcul du MSE
+    img_float = img_8bit.astype(np.float32) / 255.0
+
+    for q in qualities:
+        jpeg_path = os.path.join(output_dir, f"{basename}_q{q}.jpg")
+        save_jpeg(img_8bit, jpeg_path, quality=q)
+
+        # Taille du fichier en Ko
+        sizes[q] = os.path.getsize(jpeg_path) / 1024.0
+
+        # Comparer avec PNG (quantitativement)
+        jpeg_img = np.array(Image.open(jpeg_path), dtype=np.float32) / 255.0
+        mse = np.mean((img_float - jpeg_img) ** 2)
+        mse_values[q] = mse
+
+    # Générer un graphique taille vs qualité
+    fig, ax1 = plt.subplots(figsize=(6, 4))
+    ax2 = ax1.twinx()
+
+    ax1.plot(list(sizes.keys()), list(sizes.values()), 'o-', color='tab:blue', label="Taille JPEG (Ko)")
+    ax2.plot(list(mse_values.keys()), list(mse_values.values()), 's--', color='tab:red', label="MSE vs PNG")
+
+    ax1.set_xlabel("Qualité JPEG")
+    ax1.set_ylabel("Taille du fichier (Ko)", color='tab:blue')
+    ax2.set_ylabel("MSE vs PNG", color='tab:red')
+    ax1.set_xticks(qualities)
+    ax1.set_title(f"Analyse des artefacts JPEG - {basename}")
+
+    ax1.legend(loc="upper left")
+    ax2.legend(loc="upper right")
+
+    plt.tight_layout()
+    plot_path = os.path.join(output_dir, f"{basename}_jpeg_analysis.png")
+    plt.savefig(plot_path)
+    plt.close()
+
+    print(f"  Analyse JPEG terminée → graphique sauvegardé: {plot_path}")
+
+    return {
+        "jpeg_sizes_Ko": sizes,
+        "mse_vs_png": mse_values,
+        "png_path": png_path,
+        "plot_path": plot_path,
+    }
+
+
+def create_jpeg_zoom_figure(images_dict, output_path, edge_pos=None, center_pos=None, zoom_size=150, title=""):
+    """
+    Crée une figure pour visualiser les artefacts JPEG avec 3 rangées :
+    1) Image entière
+    2) Région avec contours
+    3) Centre de l'image
+
+    Args:
+        images_dict : dict {nom: chemin_fichier}
+        output_path : chemin de sauvegarde
+        edge_pos : (y, x) position centrale de la région avec contours (optionnel)
+        center_pos : (y, x) position centrale de la région centrale (optionnel)
+        zoom_size : taille des régions zoomées
+        title : titre optionnel
+    """
+    num_images = len(images_dict)
+    fig, axes = plt.subplots(3, num_images, figsize=(4 * num_images, 12))
+    if num_images == 1:
+        axes = np.expand_dims(axes, axis=1)  # pour que axes[i, j] fonctionne même avec 1 image
+
+    def clean_axes(ax):
+        ax.set_xticks([])
+        ax.set_yticks([])
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+
+    for col, (name, path) in enumerate(images_dict.items()):
+        img = np.array(Image.open(path))
+        H, W = img.shape[:2]
+
+        # 1) Image entière
+        axes[0, col].imshow(img)
+        axes[0, col].set_title(name, fontweight="bold")
+        if col == 0:
+            axes[0, col].set_ylabel("Image entière", fontweight="bold")
+        clean_axes(axes[0, col])
+
+        # 2) Région avec contours
+        if edge_pos is not None:
+            y, x = edge_pos
+            y1, y2 = max(0, y - zoom_size // 2), min(H, y + zoom_size // 2)
+            x1, x2 = max(0, x - zoom_size // 2), min(W, x + zoom_size // 2)
+            axes[1, col].imshow(img[y1:y2, x1:x2], interpolation="nearest")
+            if col == 0:
+                axes[1, col].set_ylabel("Région avec contours", fontweight="bold")
+            clean_axes(axes[1, col])
+
+        # 3) Centre de l'image
+        if center_pos is not None:
+            y, x = center_pos
+        else:
+            y, x = H // 2, W // 2
+        y1, y2 = max(0, y - zoom_size // 2), min(H, y + zoom_size // 2)
+        x1, x2 = max(0, x - zoom_size // 2), min(W, x + zoom_size // 2)
+        axes[2, col].imshow(img[y1:y2, x1:x2], interpolation="nearest")
+        if col == 0:
+            axes[2, col].set_ylabel("Centre de l'image", fontweight="bold")
+        clean_axes(axes[2, col])
+
+    if title:
+        fig.suptitle(title, fontsize=14, fontweight="bold", y=1.02)
+
+    fig.subplots_adjust(left=0.06)
+    plt.tight_layout()
+    fig.savefig(output_path, dpi=150, bbox_inches="tight", facecolor="white")
+    plt.close(fig)
+    print(f"  Saved JPEG zoom figure: {output_path}")
 
 
 # =============================================================================
@@ -673,8 +803,8 @@ def process_display_encoding(
                 title=f"Mappage tonal - {basename}",
             )
 
-            # Utiliser linéaire pour la suite (ou Reinhard si implémenté)
-            xyz_tonemapped = tonemap_linear(xyz_image)
+            # Utiliser Reinhard pour la suite
+            xyz_tonemapped = tonemap_reinhard(xyz_image)
             rgb_linear = xyz_to_linear_srgb(xyz_tonemapped)
             rgb_linear = np.clip(rgb_linear, 0, 1)
             srgb = linear_to_srgb(rgb_linear)
@@ -701,15 +831,32 @@ def process_display_encoding(
             final_jpg = os.path.join(output_dir, f"{basename}_final.jpg")
             save_jpeg(img_8bit, final_jpg, quality=95)
 
-            # TODO: L'étudiant doit implémenter l'analyse des artefacts JPEG
-            # - Sauvegarder en différentes qualités (95, 75, 50, 25)
-            # - Comparer avec PNG (sans perte)
-            # - Visualiser les artefacts de compression
-            # - Créer un graphique taille vs qualité
-            print("  [!] Analyse JPEG à implémenter par l'étudiant")
+            # Analyse des artefacts JPEG vs le png de référence
+            print("  [D] Analyse des artefacts JPEG...")
+            jpeg_analysis = analyze_jpeg_artifacts(img_8bit, output_dir, basename)
+
+            zoom_images = {"PNG": jpeg_analysis["png_path"]}
+            zoom_images.update({
+                f"JPEG q{q}": os.path.join(output_dir, f"{basename}_q{q}.jpg")
+                for q in jpeg_analysis["jpeg_sizes_Ko"].keys()
+            })
+
+            edge_pos = find_edge_region(img_8bit)
+            center_pos = (img_8bit.shape[0] // 2, img_8bit.shape[1] // 2)
+
+            create_jpeg_zoom_figure(
+                zoom_images,
+                os.path.join(output_dir, f"{basename}_jpeg_zoom.png"),
+                edge_pos=edge_pos,
+                center_pos=center_pos,
+                zoom_size=150,
+                title=f"Zoom sur artefacts JPEG - {basename}"
+            )
+
+            result["jpeg_analysis"] = jpeg_analysis
 
             # Analyse de plage dynamique
-            print("  [D] Analyse de plage dynamique...")
+            print("  [E] Analyse de plage dynamique...")
             dr_analysis = analyze_dynamic_range(rgb_linear)
             result["dynamic_range"] = dr_analysis
             print(
