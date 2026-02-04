@@ -21,6 +21,7 @@ Usage:
 
 import glob
 import os
+import textwrap
 from collections import defaultdict
 
 import numpy as np
@@ -48,6 +49,7 @@ from tp1_rapport import (
     create_tonemapping_comparison_figure,
     create_oetf_comparison_figure,
     create_dynamic_range_figure, find_edge_region,
+    make_styled_paragraphs
 )
 
 
@@ -447,12 +449,21 @@ def generate_report(results, output_dir):
     sec1_content = ""
 
     # Texte d'introduction pour la section 1
+    sec1_raw_intro_text = textwrap.dedent("""
+    Le format RAW contient les mesures brutes du capteur photo, sans traitement ni compression. 
+    Dans le présent TP, la format RAW utilisé est le DNG (Digital Negative).
+    
+    Le motif de Bayer est une matrice de filtres de couleur où chaque pixel n'enregistre qu'un seul canal de couleur (rouge, vert ou bleu). 
+    C'est ce qui permet de capter plusieurs couleurs différentes en même temps.
+    Les couleurs sont alternées et le vert apparait deux fois plus souvent que les autres couleurs. 
+    À partir de ce filtre, on peut reconstruire l’image couleur par interpolation.
+    
+    La normalisation des données brutes ramène les valeurs de couleurs captées entre 0 et 1 pour faciliter ensuite le traitement. 
+    """)
+
     sec1_content += subsection(
         "Introduction",
-        '<div style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4fc3f7;">'
-        '<p style="color: #a0a0a0; font-style: italic;">À remplir: Décrivez ici votre compréhension du format RAW, '
-        'du motif de Bayer, et de la normalisation des données brutes.</p>'
-        '</div>'
+        make_styled_paragraphs(sec1_raw_intro_text)
     )
 
     for basename in basenames:
@@ -471,12 +482,28 @@ def generate_report(results, output_dir):
             sec1_content += section(f"Image: {basename}", sec1_img_content)
 
     # Analyse et observations
+    sec1_raw_analyse_text = textwrap.dedent("""
+Les métadonnées de chaque photo informent sur le motif de Bayer utilisé, la profondeur de bits, les dimensions et 
+l'orientation. De plus, on peut récupérer les valeurs de niveau de noir et de niveau de blanc. 
+On a aussi les valeurs fournies par la caméra pour faire la balance des blancs. 
+Finalement, on a la matrice RGB->XYZ spécifique à la caméra (pour passer d'une "couleur caméra" à une couleur normalisée), 
+ainsi que la matrice de couleur, servant à convertir les valeurs RAW normalisées du capteur vers un espace couleur standard (pour visualiser à l'écran).
+Je constate que ces caractéristiques sont toutes variables à l'intérieur du set de photos utilisées. 
+Il faut donc que les algorithmes utilisés fonctionnent peu importe ces caractéristiques. 
+
+Les motifs de Bayer (RGGB, BGGR, GRBG, etc.) montrent comment les pixels capturent alternativement les couleurs, 
+toujours avec le vert présent deux fois plus que les autres couleurs.
+
+Les niveaux de noir sont les valeurs enregistrées par le capteur quand il ne reçoit aucune lumière 
+et les niveaux de blanc sont leurs valeurs de saturation maximale. Ces valeurs dépendent de la profondeur de bits.
+On se sert directement de ces valeurs minimales et maximales pour la normalisation.
+
+Les images présentées ci-dessous permettent de visualiser la conversion d'une mosaique brute, d'après le motif de Bayer associé, en mosaique colorée.
+    """)
+
     sec1_content += subsection(
         "Analyse et observations",
-        '<div style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4fc3f7;">'
-        '<p style="color: #a0a0a0; font-style: italic;">À remplir: Décrivez vos observations sur les métadonnées extraites, '
-        'le motif de Bayer, et la normalisation.</p>'
-        '</div>'
+        make_styled_paragraphs(sec1_raw_analyse_text)
     )
 
     content += section("Section 1: Chargement et Compréhension des Données RAW", sec1_content, icon="📷")

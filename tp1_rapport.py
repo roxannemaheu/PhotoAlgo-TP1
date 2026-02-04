@@ -8,9 +8,11 @@ and matplotlib figure generation.
 """
 
 from datetime import datetime
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
 from scipy import ndimage
+
 
 # =============================================================================
 # CSS Styles
@@ -653,7 +655,7 @@ def image_grid(images, title=""):
                 <div class="image-label">{label}</div>
             </div>
         """
-    
+
     title_html = f'<h3>{title}</h3>' if title else ""
     return f"""
         {title_html}
@@ -682,7 +684,7 @@ def comparison_grid(comparisons, title=""):
         reference_src = comp_data.get("reference_src", "")
         final_alt = comp_data.get("final_alt", f"Image finale - {basename}")
         reference_alt = comp_data.get("reference_alt", f"Référence sRGB - {basename}")
-        
+
         comparison_items += f"""
             <div class="comparison-pair">
                 <div class="comparison-pair-title">{basename}</div>
@@ -698,7 +700,7 @@ def comparison_grid(comparisons, title=""):
                 </div>
             </div>
         """
-    
+
     title_html = f'<h3>{title}</h3>' if title else ""
     return f"""
         {title_html}
@@ -798,7 +800,7 @@ def formula_box(formula):
 
 
 def create_bayer_zoom_figure(
-    raw_data, pattern_2x2, start_y, start_x, output_path, title=""
+        raw_data, pattern_2x2, start_y, start_x, output_path, title=""
 ):
     """
     Create a figure showing a 16x16 region with Bayer pattern visualization.
@@ -810,14 +812,14 @@ def create_bayer_zoom_figure(
         output_path: Where to save the figure
         title: Optional figure title
     """
-    region = raw_data[start_y : start_y + 16, start_x : start_x + 16]
+    region = raw_data[start_y: start_y + 16, start_x: start_x + 16]
 
     fig, axes = plt.subplots(1, 2, figsize=(14, 6))
 
     # Grayscale view
     axes[0].imshow(region, cmap="gray", vmin=0, vmax=1)
     axes[0].set_title(
-        f"Mosaic brute (niveaux de gris)\n[{start_y}:{start_y+16}, {start_x}:{start_x+16}]"
+        f"Mosaic brute (niveaux de gris)\n[{start_y}:{start_y + 16}, {start_x}:{start_x + 16}]"
     )
     for i in range(17):
         axes[0].axhline(i - 0.5, color="gray", linewidth=0.5, alpha=0.5)
@@ -860,7 +862,7 @@ def find_interesting_region(raw_data, size=16):
     for y, x in candidates:
         y, x = (y // 2) * 2, (x // 2) * 2  # Align to Bayer pattern
         if y + size <= H and x + size <= W:
-            std = np.std(raw_data[y : y + size, x : x + size])
+            std = np.std(raw_data[y: y + size, x: x + size])
             if std > best_std:
                 best_std, best_pos = std, (y, x)
 
@@ -873,7 +875,7 @@ def find_interesting_region(raw_data, size=16):
 
 
 def create_demosaic_comparison_figure(
-    images, output_path, linear_to_srgb_func, title=""
+        images, output_path, linear_to_srgb_func, title=""
 ):
     """
     Create side-by-side comparison figure for demosaicing results.
@@ -904,7 +906,7 @@ def create_demosaic_comparison_figure(
 
 
 def create_difference_figure(
-    img1, img2, name1, name2, output_path, linear_to_srgb_func, title=""
+        img1, img2, name1, name2, output_path, linear_to_srgb_func, title=""
 ):
     """
     Create difference visualization figure between two images.
@@ -958,7 +960,7 @@ def find_edge_region(image, size=150):
 
     for y in range(size, H - size, size // 2):
         for x in range(size, W - size, size // 2):
-            score = np.mean(gradient[y : y + size, x : x + size])
+            score = np.mean(gradient[y: y + size, x: x + size])
             if score > best_score:
                 best_score, best_pos = score, (y + size // 2, x + size // 2)
 
@@ -966,7 +968,7 @@ def find_edge_region(image, size=150):
 
 
 def create_demosaic_zoom_figure(
-    images, edge_pos, center_pos, output_path, linear_to_srgb_func, size=150, title=""
+        images, edge_pos, center_pos, output_path, linear_to_srgb_func, size=150, title=""
 ):
     """
     Create zoomed comparison at edge and center regions.
@@ -1027,7 +1029,7 @@ def create_demosaic_zoom_figure(
 
 
 def create_neutral_point_figure(
-    image, click_pos, region_size, output_path, linear_to_srgb_func, title=""
+        image, click_pos, region_size, output_path, linear_to_srgb_func, title=""
 ):
     """
     Show selected neutral point on image for manual white balance.
@@ -1107,7 +1109,7 @@ def create_wb_comparison_figure(results, output_path, linear_to_srgb_func, title
 
 
 def create_xyz_comparison_figure(
-    results, output_path, linear_to_srgb_func, xyz_to_srgb_func, title=""
+        results, output_path, linear_to_srgb_func, xyz_to_srgb_func, title=""
 ):
     """
     Show RGB and XYZ→sRGB side by side.
@@ -1177,12 +1179,12 @@ def create_tonemapping_curves_figure(output_path):
 
 
 def create_tonemapping_comparison_figure(
-    xyz_image,
-    output_path,
-    tonemap_funcs,
-    xyz_to_linear_srgb_func,
-    linear_to_srgb_func,
-    title="",
+        xyz_image,
+        output_path,
+        tonemap_funcs,
+        xyz_to_linear_srgb_func,
+        linear_to_srgb_func,
+        title="",
 ):
     """
     Compare tone mapping operators.
@@ -1333,7 +1335,7 @@ def create_filesize_quality_graph(jpeg_results, png_size, output_path, title="")
         color="g",
         ls="--",
         lw=2,
-        label=f"PNG ({png_size/1024:.1f}KB)",
+        label=f"PNG ({png_size / 1024:.1f}KB)",
     )
     axes[0].set_xlabel("Qualité JPEG")
     axes[0].set_ylabel("Taille (KB)")
@@ -1373,9 +1375,9 @@ def create_dynamic_range_figure(linear_rgb, srgb, analysis, output_path, title="
     fig, axes = plt.subplots(2, 3, figsize=(15, 10))
 
     lum = (
-        0.2126 * linear_rgb[:, :, 0]
-        + 0.7152 * linear_rgb[:, :, 1]
-        + 0.0722 * linear_rgb[:, :, 2]
+            0.2126 * linear_rgb[:, :, 0]
+            + 0.7152 * linear_rgb[:, :, 1]
+            + 0.0722 * linear_rgb[:, :, 2]
     )
     highlight_mask = lum >= 0.95
     shadow_mask = lum <= 0.05
@@ -1452,6 +1454,28 @@ def save_report(html_content, filepath):
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(html_content)
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Rapport HTML généré: {filepath}")
     print("=" * 60)
+
+
+def make_styled_paragraphs(text, color="#a0a0a0", italic=True):
+    """
+    Transforme un texte brut en paragraphes HTML stylés.
+
+    Chaque double saut de ligne (\n\n) devient un paragraphe <p>.
+
+    Args:
+        text (str): texte brut
+        color (str): couleur du texte
+        italic (bool): mettre en italique si True
+
+    Returns:
+        str: HTML prêt à insérer
+    """
+    style = f"color: {color};"
+    if italic:
+        style += " font-style: italic;"
+    paragraphs = "".join([f"<p style='{style}'>{p.strip()}</p>"
+                          for p in text.split("\n\n") if p.strip()])
+    return f'<div style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4fc3f7;">{paragraphs}</div>'
