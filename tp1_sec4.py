@@ -458,7 +458,8 @@ def generate_report(results, output_dir):
     Les couleurs sont alternées et le vert apparait deux fois plus souvent que les autres couleurs. 
     À partir de ce filtre, on peut reconstruire l’image couleur par interpolation.
     
-    La normalisation des données brutes ramène les valeurs de couleurs captées entre 0 et 1 pour faciliter ensuite le traitement. 
+    La normalisation des données brutes ramène les valeurs de couleurs captées entre 0 et 1 pour faciliter ensuite le traitement, 
+    et permettre de comparer des images provenant de capteurs différents. 
     """)
 
     sec1_content += subsection(
@@ -498,7 +499,9 @@ Les niveaux de noir sont les valeurs enregistrées par le capteur quand il ne re
 et les niveaux de blanc sont leurs valeurs de saturation maximale. Ces valeurs dépendent de la profondeur de bits.
 On se sert directement de ces valeurs minimales et maximales pour la normalisation.
 
-Les images présentées ci-dessous permettent de visualiser la conversion d'une mosaique brute, d'après le motif de Bayer associé, en mosaique colorée.
+Les images présentées ci-dessus permettent de visualiser la conversion d'une mosaique brute, d'après le motif de Bayer associé, en mosaique colorée. 
+On voit clairement que chaque pixel ne contient qu’une seule composante de couleur, 
+à des niveaux variables, et que les pixels verts apparaissent deux fois plus fréquemment que les pixels rouges et bleux.
     """)
 
     sec1_content += subsection(
@@ -514,12 +517,22 @@ Les images présentées ci-dessous permettent de visualiser la conversion d'une 
     sec2_content = ""
 
     # Texte d'introduction pour la section 2
+    sec2_raw_intro_text = textwrap.dedent("""
+    Le dématriçage consiste à reconstruire une image couleur complète à partir de la mosaïque Bayer mono-canal.
+    Puisque chaque pixel n'enregistre qu'une seule couleur, les deux autres doivent être interpolées à partir des pixels voisins.
+    Pour ce faire, plusieurs méthodes existent, dont la méthode bilinéaire et la méthode Malvar-He-Cutler.
+    
+    La méthode bilinéaire interpole simplement les couleurs manquantes à partir de la moyenne des pixels voisins de même couleur, 
+    ce qui est simple et rapide, mais reconnu pour générer des artefacts comme le moiré et les contours colorés.  
+
+    La méthode Malvar-He-Cutler utilise des filtres linéaires optimisés pour réduire ces artefacts et améliorer la fidélité des couleurs, 
+    donnant généralement un résultat plus propre. Le principe derrière les filtres est d'utiliser l'information sur les contours 
+    pour éviter de les traverser avec une couleur.
+    """)
+
     sec2_content += subsection(
         "Introduction",
-        '<div style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #778da9;">'
-        '<p style="color: #a0a0a0; font-style: italic;">À remplir: Expliquez le processus de dématriçage, '
-        'les différences entre les méthodes bilinéaire et Malvar-He-Cutler, et les artefacts observés.</p>'
-        '</div>'
+        make_styled_paragraphs(sec2_raw_intro_text)
     )
 
     for basename in basenames:
@@ -547,12 +560,51 @@ Les images présentées ci-dessous permettent de visualiser la conversion d'une 
             sec2_content += section(f"Image: {basename}", sec2_img_content)
 
     # Analyse et observations
+    sec2_raw_analyse_text = textwrap.dedent("""
+INTERPRÉTATION VISUELLE DES IMAGES OBTENUES
+Il y a peu de différences entre les résultats obtenus avec chacune des méthodes. 
+Ces minces différences ne sont perceptibles qu'en zoomant sur les zones avec de forts contrastes. 
+On voit alors que l'extrapolation bilinéaire donne un résultat avec des contours plus adoucis, 
+alors que les contours obtenus avec Malvar sont plus définis.
+
+Peu importe la méthode utilisée, on voit parfois apparaitre des pixels de couleur (effet de Moiré) à des endroits 
+de haute luminosité (couleur blanche). L'interpolation bilinéaire permet de "lisser" ces pixels de couleur, 
+et donc les atténue, comparativement à la méthode Malvac-He-Cutler.
+
+INTERPRÉTATION DES MÉTRIQUES: TEMPS
+L'interpolation bilinéaire est toujours plus rapide que la méthode Malvar-He-Cutler, 
+probablement en raison des kernels de convolution, qui sont plus gros. 
+Donc la faible amélioration de la qualité se fait au détriment de la vitesse.
+
+INTERPRÉTATION DES MÉTRIQUES: PSNR
+Le PSNR est une métrique qui informe sur la différence de valeur pixel par pixel entre deux images. 
+Il s'exprime en décibels (dB). Plus la valeur est élevée, plus l'image traitée est proche de l'originale.
+
+Selon la littérature, pour des données 8 bits, les valeurs de PSNR oscillent généralement entre 30 et 50 dB. 
+Pour des données 16 bits, les valeurs de PSNR oscillent généralement entre 60 et 80 dB. 
+Nos résultats vont de 40.82 dB à 57.08 dB, pour des images majoritairement de 12 et 14 bits, et une seule image à 16 bits (pelican).
+
+Dans notre cas, comme le PSNR se calcule par rapport à l'image avec interpolation bilinéaire, 
+mon interprétion de la métrique est que plus elle est faible, plus la différence entre les deux algorithmes est marquée 
+(on ne peut que comparer des images ayant le même nombre de bits). La PSNR la plus élevée est pour pelican, 
+ce qui est logique puisque J'ai toutefois eu du mal à voir une corrélation entre la valeur de la métrique (qui varie entre 40.82 et 57.08) 
+et la similarité entre les résultats.
+
+INTERPRÉTATION DES MÉTRIQUES: SSIM
+Le SSIM repose sur un indice de similarité structurelle entre deux images, en intégrant le contraste de l'image, 
+les différences structurelles et la luminosité. Plus il est près de 1, plus deux images sont similaires. 
+Dans notre cas, les valeurs de SSIM (Structural Similarity Index) sont très près de 1, 
+ce qui indique que la structure globable de l'image est presque identique entre les algorithmes.
+
+RÉFÉRENCE
+Référence pour la compréhension des métriques PSNR et SSIM: 
+Sara, U. , Akter, M. and Uddin, M. (2019) Image Quality Assessment through FSIM, SSIM, MSE and PSNR—A Comparative Study. Journal of Computer and Communications, 7, 8-18. doi: 10.4236/jcc.2019.73002. 
+Disponible à https://www.scirp.org/journal/paperinformation?paperid=90911.
+        """)
+
     sec2_content += subsection(
         "Analyse et observations",
-        '<div style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #778da9;">'
-        '<p style="color: #a0a0a0; font-style: italic;">À remplir: Comparez les résultats des différentes méthodes de dématriçage. '
-        'Discutez des métriques de qualité (PSNR, SSIM) et des temps d\'exécution. Identifiez les régions où les artefacts sont les plus visibles.</p>'
-        '</div>'
+        make_styled_paragraphs(sec2_raw_analyse_text)
     )
 
     content += section("Section 2: Dématriçage (Demosaicking)", sec2_content, icon="🎨")
