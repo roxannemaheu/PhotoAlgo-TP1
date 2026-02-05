@@ -489,6 +489,18 @@ On voit clairement que chaque pixel ne contient qu’une seule composante de cou
         make_styled_paragraphs(sec1_raw_analyse_text)
     )
 
+    # Utilisation d'un LLM
+    sec1_raw_approche_text = textwrap.dedent("""
+    Pour cette section, le travail consistait seulement à analyser le code existant. Je n'ai donc pas utilisé de LLM. 
+    J'ai plutôt utilisé ce qui était directement écrit dans l'énoncé du TP, ainsi qu'analysé le code existant, pour m'aider à comprendre.
+    J'ai rédigé l'analyse moi-meme.
+            """)
+
+    sec1_content += subsection(
+        "Approche utilisée",
+        make_styled_paragraphs(sec1_raw_approche_text)
+    )
+
     content += section("Section 1: Chargement et Compréhension des Données RAW", sec1_content, icon="📷")
 
     # =============================================================================
@@ -587,6 +599,27 @@ Disponible à https://www.scirp.org/journal/paperinformation?paperid=90911.
         make_styled_paragraphs(sec2_raw_analyse_text)
     )
 
+    # Utilisation d'un LLM
+    sec2_raw_approche_text = textwrap.dedent("""
+    Pour cette section, j'ai utilisé un LLM pour m'expliquer la méthodologie Malver-He-Cutler et pour produire le code. 
+    Le code fourni avait des erreurs, que j'ai corrigé manuellement (par exemple, toutes les possibilités de motifs Bayer n'étaient pas prises en compte)
+    J'ai aussi d'abord utilisé un LLM pour m'expliquer les métriques, puis j'ai validé avec une référence fiable (fournie dans la discussion).
+    J'ai rédigé l'analyse moi-meme.
+    
+    <strong>Prompts utilisés:</strong><br>
+    - Peux-tu me faire et m'expliquer un exemple simple et chiffré nécessitant une correction de l'application de cette méthode: 
+    https://wcours.gel.ulaval.ca/GIF4105/tps/tp1/Malvar-He-Cutler-2004.pdf<br>
+    - [Copie de la fonction fournie (incomplète) de demosaic_bilinear] Implémenter l'algorithme et explique moi chaque étape.<br>
+    - [Copie de la fonction fournie (incomplète) de demosaic_malvar] Implémenter l'algorithme tel que décrit dans :
+    https://wcours.gel.ulaval.ca/GIF4105/tps/tp1/Malvar-He-Cutler-2004.pdf. Explique moi chaque étape.<br>
+    - Explique moi SSIM et PSNR<br>
+            """)
+
+    sec2_content += subsection(
+        "Approche utilisée",
+        make_styled_paragraphs(sec2_raw_approche_text)
+    )
+
     content += section("Section 2: Dématriçage (Demosaicking)", sec2_content, icon="🎨")
 
     # =============================================================================
@@ -678,6 +711,24 @@ Elle est rapide et robuste dans la majorité des cas, mais reste théoriquement 
     sec3_content += subsection(
         "Analyse et observations",
         make_styled_paragraphs(sec3_raw_analyse_text)
+    )
+
+    # Utilisation d'un LLM
+    sec3_raw_approche_text = textwrap.dedent("""
+    Pour cette section, j'ai utilisé un LLM pour produire les fonctions et m'expliquer le code. 
+    J'ai fait les modifications plus mineures dans le code (corrections et petits ajouts) à la main.
+    J'ai rédigé l'analyse moi-meme.
+
+    <strong>Prompts utilisés:</strong><br>
+    - [Copie de la fonction fournie (incomplète) de find_neutral_region] Implémenter l'algorithme et explique moi chaque étape.<br>
+    - [Copie de la fonction fournie (incomplète) de white_balance_auto_neutral] Implémenter l'algorithme et explique moi chaque étape.<br>
+    - [Copie de la fonction fournie (incomplète) de white_balance_grey_world] Implémenter l'algorithme et explique moi chaque étape.<br>
+    - Explique moi SSIM et PSNR<br>
+            """)
+
+    sec3_content += subsection(
+        "Approche utilisée",
+        make_styled_paragraphs(sec3_raw_approche_text)
     )
 
     content += section("Section 3: Balance des Blancs (White Balance)", sec3_content, icon="⚪")
@@ -870,6 +921,28 @@ Elle est rapide et robuste dans la majorité des cas, mais reste théoriquement 
     sec4_content += subsection(
         "Analyse et observations",
         make_styled_paragraphs(sec4_raw_analyse_text)
+    )
+
+    # Utilisation d'un LLM
+    sec4_raw_approche_text = textwrap.dedent("""
+    Pour cette section, j'ai utilisé un LLM pour produire l'ensemble du code de la compression des jpeg.
+    J'ai aussi utilisé un LLM pour m'aider à formater le texte dans le rapport final. 
+    J'ai fait les modifications plus mineures dans le code (corrections et petits ajouts) à la main.
+    J'ai rédigé l'analyse moi-meme.
+
+    <strong>Prompts utilisés:</strong><br>
+    - [Copie de la fonction fournie de analyze_dynamic_range et de l'endroit où elle est appelée dans process_display_encoding] 
+    Sers toi de cet exemple pour [copie des commentaires dans le code concernant les artefacts jpeg].<br>
+    - [Copie de process_display_encoding] J'aimerais une fonction me produisant un graphique comparant, 
+    pour tous les niveaux de compression des jpeg et le png, la moyenne de taille du fichier, avec l'écart-type.<br>
+    - [Copie de la fonction fournie de generate_report] J'aimerais pouvoir ajouter le texte demandé de manière simple et intuitive, avec des paragraphes.<br>
+    - Explique moi OETF <br>
+    - [Copie de la fonction fournie de analyze_dynamic_range] Explique moi les métriques et aide moi à les interpréter.<br>
+            """)
+
+    sec4_content += subsection(
+        "Approche utilisée",
+        make_styled_paragraphs(sec4_raw_approche_text)
     )
 
     content += section("Section 4: Mappage Tonal et Encodage d'Affichage", sec4_content, icon="🎨")
