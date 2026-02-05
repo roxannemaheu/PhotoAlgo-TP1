@@ -4,7 +4,7 @@
 TP1 Section 4: Mappage Tonal et Encodage d'Affichage
 
 Ce script:
-1. Charge les images XYZ depuis ./images_intermediaires_sec3/*_camera_xyz.tiff
+1. Charge les images XYZ depuis ./../report/images_intermediaires_sec3/*_camera_xyz.tiff
 2. Applique l'ajustement de luminosité (À IMPLÉMENTER)
 3. Applique le mappage tonal:
    - Linéaire (implémenté)
@@ -13,10 +13,10 @@ Ce script:
 5. Applique l'OETF sRGB (implémenté)
 6. Sauvegarde le JPEG final (implémenté)
 7. Analyse les artefacts JPEG (À IMPLÉMENTER)
-8. Sauvegarde dans ./images_intermediaires_sec4/
+8. Sauvegarde dans ./../report/images_intermediaires_sec4/
 
 Usage:
-    python tp1_sec4.py --input-dir images_intermediaires_sec3 --output-dir images_intermediaires_sec4
+    python tp1_sec4.py --input-dir ../report/images_intermediaires_sec3 --output-dir ../report/images_intermediaires_sec4
 """
 
 import glob
@@ -128,7 +128,19 @@ def tonemap_reinhard(xyz_image):
     Returns:
         Image XYZ avec mappage tonal appliqué
     """
-    return xyz_image.copy() / (1 + xyz_image)
+    xyz = xyz_image.copy()
+    eps = 1e-6
+
+    Y = xyz[:, :, 1]
+    Y_mapped = Y / (1.0 + Y)
+
+    scale = Y_mapped / (Y + eps)
+
+    xyz[:, :, 0] *= scale
+    xyz[:, :, 1] = Y_mapped
+    xyz[:, :, 2] *= scale
+
+    return xyz
 
 
 # =============================================================================
@@ -385,7 +397,7 @@ def analyze_dynamic_range(image_linear):
 # =============================================================================
 
 
-def generate_report(results, output_dir):
+def generate_report(results, report_dir):
     """
     Générer un rapport HTML template pour toutes les sections du TP1.
     
@@ -395,19 +407,13 @@ def generate_report(results, output_dir):
     - Section 3: Balance des Blancs (White Balance)
     - Section 4: Mappage tonal et encodage d'affichage
     
-    Inclut toutes les figures générées et des espaces "À remplir" pour l'étudiant.
+    Inclut toutes les figures générées et des espaces remplis par l'étudiant.
     """
-    # Définir les répertoires de sortie pour chaque section
-    # Si output_dir est "images_intermediaires_sec4", base_dir sera le répertoire parent
-    if "images_intermediaires_sec" in os.path.basename(output_dir):
-        base_dir = os.path.dirname(output_dir) or "."
-    else:
-        base_dir = output_dir
 
-    sec1_dir = os.path.join(base_dir, "images_intermediaires_sec1")
-    sec2_dir = os.path.join(base_dir, "images_intermediaires_sec2")
-    sec3_dir = os.path.join(base_dir, "images_intermediaires_sec3")
-    sec4_dir = output_dir
+    sec1_dir = "../report/images_intermediaires_sec1"
+    sec2_dir = "../report/images_intermediaires_sec2"
+    sec3_dir = "../report/images_intermediaires_sec3"
+    sec4_dir = "../report/images_intermediaires_sec4"
 
     # Obtenir la liste des basenames (noms de fichiers sans extension)
     basenames = [result["basename"] for result in results] if results else []
@@ -455,7 +461,7 @@ def generate_report(results, output_dir):
         if os.path.exists(zoom_path):
             sec1_img_content += subsection(
                 f"Région 16×16 de la mosaïque - {basename}",
-                figure(f"../images_intermediaires_sec1/{basename}_zoom16x16.png",
+                figure(zoom_path,
                        "Zoom sur une région 16×16 montrant les valeurs normalisées et le motif de Bayer coloré.")
             )
 
@@ -542,7 +548,7 @@ On voit clairement que chaque pixel ne contient qu’une seule composante de cou
         if os.path.exists(comp_path):
             sec2_img_content += subsection(
                 f"Comparaison des méthodes - {basename}",
-                figure(f"../images_intermediaires_sec2/{basename}_comparison.png",
+                figure(comp_path,
                        "Comparaison des méthodes de dématriçage")
             )
 
@@ -551,7 +557,7 @@ On voit clairement que chaque pixel ne contient qu’une seule composante de cou
         if os.path.exists(zoom_path):
             sec2_img_content += subsection(
                 f"Zoom sur les artefacts - {basename}",
-                figure(f"../images_intermediaires_sec2/{basename}_zoom.png",
+                figure(zoom_path,
                        "Recadrages montrant les artefacts de contour")
             )
 
@@ -679,7 +685,7 @@ Elle est rapide et robuste dans la majorité des cas, mais reste théoriquement 
         if os.path.exists(comp_path):
             sec3_img_content += subsection(
                 f"Comparaison des méthodes - {basename}",
-                figure(f"../images_intermediaires_sec3/{basename}_comparison.png",
+                figure(comp_path,
                        "Comparaison des méthodes de balance des blancs")
             )
 
@@ -688,7 +694,7 @@ Elle est rapide et robuste dans la majorité des cas, mais reste théoriquement 
         if os.path.exists(xyz_path):
             sec3_img_content += subsection(
                 f"Conversion XYZ - {basename}",
-                figure(f"../images_intermediaires_sec3/{basename}_xyz_comparison.png",
+                figure(xyz_path,
                        "Images converties en XYZ puis reconverties en sRGB")
             )
 
@@ -804,19 +810,19 @@ Elle est rapide et robuste dans la majorité des cas, mais reste théoriquement 
     sec4_content += subsection("Concepts et algorithmes", algorithms)
 
     # Figure: Courbes de mappage tonal
-    curves_path = os.path.join(sec4_dir, "tonemapping_curves.png")
-    if os.path.exists(curves_path):
+    tone_mapping_curves_path = os.path.join(sec4_dir, "tonemapping_curves.png")
+    if os.path.exists(tone_mapping_curves_path):
         sec4_content += subsection(
             "Courbes de mappage tonal",
-            figure("tonemapping_curves.png", "Comparaison des courbes de réponse")
+            figure(tone_mapping_curves_path, "Comparaison des courbes de réponse")
         )
 
     # Figure: Graphique de taille vs qualité jpeg
-    curves_path = os.path.join(sec4_dir, "jpeg_size_vs_quality_global_mean.png")
-    if os.path.exists(curves_path):
+    jpeg_curves_path = os.path.join(sec4_dir, "jpeg_size_vs_quality_global_mean.png")
+    if os.path.exists(jpeg_curves_path):
         sec4_content += subsection(
             "Taille du jpeg par rapport à sa qualité",
-            figure("jpeg_size_vs_quality_global_mean.png", "Comparaison de la taille du jpeg par rapport à sa qualité")
+            figure(jpeg_curves_path, "Comparaison de la taille du jpeg par rapport à sa qualité")
         )
 
     # Figures pour chaque image
@@ -846,7 +852,7 @@ Elle est rapide et robuste dans la majorité des cas, mais reste théoriquement 
             sec4_img_content += subsection(
                 "Comparaison des opérateurs",
                 figure(
-                    f"{basename}_tonemapping_comparison.png",
+                    comp_path,
                     "Comparaison: Linéaire, Reinhard",
                 ),
             )
@@ -857,18 +863,18 @@ Elle est rapide et robuste dans la majorité des cas, mais reste théoriquement 
             sec4_img_content += subsection(
                 "Avant/Après OETF",
                 figure(
-                    f"{basename}_oetf_comparison.png",
+                    oetf_path,
                     "L'OETF encode les valeurs linéaires pour l'affichage",
                 ),
             )
 
         # Figure: Niveaux de compression jpeg
-        oetf_path = os.path.join(sec4_dir, f"{basename}_jpeg_zoom.png")
-        if os.path.exists(oetf_path):
+        jpeg_path = os.path.join(sec4_dir, f"{basename}_jpeg_zoom.png")
+        if os.path.exists(jpeg_path):
             sec4_img_content += subsection(
                 "Comparaison des niveaux de compression jpeg",
                 figure(
-                    f"{basename}_jpeg_zoom.png",
+                    jpeg_path,
                     "Comparaison des niveaux de compression jpeg",
                 ),
             )
@@ -878,7 +884,7 @@ Elle est rapide et robuste dans la majorité des cas, mais reste théoriquement 
         if os.path.exists(final_path):
             sec4_img_content += subsection(
                 "Image finale",
-                figure(f"{basename}_final.jpg", "Image JPEG finale (qualité 95)"),
+                figure(final_path, "Image JPEG finale (qualité 95)"),
             )
 
         # Figure: Plage dynamique
@@ -903,7 +909,7 @@ Elle est rapide et robuste dans la majorité des cas, mais reste théoriquement 
             sec4_img_content += subsection(
                 "Plage dynamique",
                 figure(
-                    f"{basename}_dynamic_range.png", "Analyse des hautes lumières et ombres"
+                    dr_path, "Analyse des hautes lumières et ombres"
                 ) + dr_table,
             )
 
@@ -1003,7 +1009,7 @@ Elle est rapide et robuste dans la majorité des cas, mais reste théoriquement 
         reference_src = None
         srgb_path = os.path.join(sec1_dir, f"{basename}_srgb.jpg")
         if os.path.exists(srgb_path):
-            reference_src = f"../images_intermediaires_sec1/{basename}_srgb.jpg"
+            reference_src = f"../../report/images_intermediaires_sec1/{basename}_srgb.jpg"
 
         if reference_src:
             comparisons.append({
@@ -1026,7 +1032,7 @@ Elle est rapide et robuste dans la majorité des cas, mais reste théoriquement 
     if comparisons:
         grid_content = subsection(
             "Comparaison: Vos résultats vs Références sRGB",
-            '<p style="color: #a0a0a0; margin-bottom: 20px;">Comparez vos images finales avec les aperçus sRGB générés par rawpy. Cliquez sur une image pour l\'agrandir.</p>'
+            '<p style="color: #a0a0a0; margin-bottom: 20px;">Comparez vos images finales avec les aperçus sRGB générés par rawpy. Cliquez sur une image pour l\'agrandir. À noter: Mes images personnelles sont image1, image2, image3.</p>'
         )
         grid_content += comparison_grid(comparisons)
         content += section("Comparaison des Images Finales", grid_content, icon="🖼️")
@@ -1067,7 +1073,7 @@ Elle est rapide et robuste dans la majorité des cas, mais reste théoriquement 
         accent_color="#778da9",
     )
 
-    save_report(html, os.path.join(output_dir, "rapport_complet.html"))
+    save_report(html, os.path.join(report_dir, "index.html"))
 
 
 # =============================================================================
@@ -1076,10 +1082,13 @@ Elle est rapide et robuste dans la majorité des cas, mais reste théoriquement 
 
 
 def process_display_encoding(
-        input_dir="images_intermediaires_sec3",
-        output_dir="images_intermediaires_sec4",
+        input_dir="../report/images_intermediaires_sec3",
+        output_dir="../report/images_intermediaires_sec4",
+        report_dir="../report",
         input_suffix="_camera_xyz.tiff",
 ):
+    os.makedirs(report_dir, exist_ok=True)
+
     """Traiter les images XYZ avec mappage tonal et encodage d'affichage."""
     os.makedirs(output_dir, exist_ok=True)
 
@@ -1221,7 +1230,7 @@ def process_display_encoding(
         )
 
     if results:
-        generate_report(results, output_dir)
+        generate_report(results, report_dir)
 
     print(f"\n{'=' * 60}")
     print(f"Terminé! {len(results)} image(s) traitée(s) → {output_dir}/")
@@ -1234,9 +1243,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="TP1 Section 4: Mappage Tonal et Encodage"
     )
-    parser.add_argument("--input-dir", "-i", default="images_intermediaires_sec3")
-    parser.add_argument("--output-dir", "-o", default="images_intermediaires_sec4")
+    parser.add_argument("--input-dir", "-i", default="../report/images_intermediaires_sec3")
+    parser.add_argument("--output-dir", "-o", default="../report/images_intermediaires_sec4")
+    parser.add_argument("--report-dir", "-r", default="../report")
     parser.add_argument("--suffix", "-s", default="_camera_xyz.tiff")
 
     args = parser.parse_args()
-    process_display_encoding(args.input_dir, args.output_dir, args.suffix)
+    process_display_encoding(args.input_dir, args.output_dir, args.report_dir, args.suffix)
