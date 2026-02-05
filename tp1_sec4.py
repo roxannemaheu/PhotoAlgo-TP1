@@ -541,7 +541,7 @@ On voit clairement que chaque pixel ne contient qu’une seule composante de cou
 
     # Analyse et observations
     sec2_raw_analyse_text = textwrap.dedent("""
-INTERPRÉTATION VISUELLE DES IMAGES OBTENUES
+<strong>INTERPRÉTATION VISUELLE DES IMAGES OBTENUES</strong><br>
 Il y a peu de différences entre les résultats obtenus avec chacune des méthodes. 
 Ces minces différences ne sont perceptibles qu'en zoomant sur les zones avec de forts contrastes. 
 On voit alors que l'extrapolation bilinéaire donne un résultat avec des contours plus adoucis, 
@@ -551,12 +551,12 @@ Peu importe la méthode utilisée, on voit parfois apparaitre des pixels de coul
 de haute luminosité (couleur blanche). L'interpolation bilinéaire permet de "lisser" ces pixels de couleur, 
 et donc les atténue, comparativement à la méthode Malvac-He-Cutler.
 
-INTERPRÉTATION DES MÉTRIQUES: TEMPS
+<strong>INTERPRÉTATION DES MÉTRIQUES: TEMPS</strong><br>
 L'interpolation bilinéaire est toujours plus rapide que la méthode Malvar-He-Cutler, 
 probablement en raison des kernels de convolution, qui sont plus gros. 
 Donc la faible amélioration de la qualité se fait au détriment de la vitesse.
 
-INTERPRÉTATION DES MÉTRIQUES: PSNR
+<strong>INTERPRÉTATION DES MÉTRIQUES: PSNR</strong><br>
 Le PSNR est une métrique qui informe sur la différence de valeur pixel par pixel entre deux images. 
 Il s'exprime en décibels (dB). Plus la valeur est élevée, plus l'image traitée est proche de l'originale.
 
@@ -570,13 +570,13 @@ mon interprétion de la métrique est que plus elle est faible, plus la différe
 ce qui est logique puisque J'ai toutefois eu du mal à voir une corrélation entre la valeur de la métrique (qui varie entre 40.82 et 57.08) 
 et la similarité entre les résultats.
 
-INTERPRÉTATION DES MÉTRIQUES: SSIM
+<strong>INTERPRÉTATION DES MÉTRIQUES: SSIM</strong><br>
 Le SSIM repose sur un indice de similarité structurelle entre deux images, en intégrant le contraste de l'image, 
 les différences structurelles et la luminosité. Plus il est près de 1, plus deux images sont similaires. 
 Dans notre cas, les valeurs de SSIM (Structural Similarity Index) sont très près de 1, 
 ce qui indique que la structure globable de l'image est presque identique entre les algorithmes.
 
-RÉFÉRENCE
+<strong>RÉFÉRENCE</strong><br>
 Référence pour la compréhension des métriques PSNR et SSIM: 
 Sara, U. , Akter, M. and Uddin, M. (2019) Image Quality Assessment through FSIM, SSIM, MSE and PSNR—A Comparative Study. Journal of Computer and Communications, 7, 8-18. doi: 10.4236/jcc.2019.73002. 
 Disponible à https://www.scirp.org/journal/paperinformation?paperid=90911.
@@ -649,7 +649,7 @@ Elle est rapide et robuste dans la majorité des cas, mais reste théoriquement 
 
         # Analyse et observations
         sec3_raw_analyse_text = textwrap.dedent("""
-    COMPARAISON VISUELLE DES DIFFÉRENTES MÉTHODES DE BALANCE DES BLANCS ET DISCUSSION SUR LES MULTIPLICATEURS CALCULÉS
+    <strong>COMPARAISON VISUELLE DES DIFFÉRENTES MÉTHODES DE BALANCE DES BLANCS ET DISCUSSION SUR LES MULTIPLICATEURS CALCULÉS</strong><br>
     Sur certaines photos, les trois méthodes donnent un résultat presqu'identique (par exemple, a0011-DSC_0082 - image désertique). 
     Probablement que c'est parce que les couleurs de la photo originale sont majoritairement neutres et les canaux R, G et B sont relativement équilibrées.
    
@@ -667,7 +667,7 @@ Elle est rapide et robuste dans la majorité des cas, mais reste théoriquement 
 
     La méthode Caméra semble être la plus fiable sur des conditions d'éclairage variées.
 
-    EXPLICATION DE LA CONVERSION VERS L'ESPACE XYZ
+    <strong>EXPLICATION DE LA CONVERSION VERS L'ESPACE XYZ</strong><br>
     Après le dématriçage, l'espace de couleur est "RGB de la caméra", qui n'est pas un espace standard. 
     Le manufacturier donne la matrice de conversion vers XYZ.
     La conversion vers l’espace XYZ permet de représenter les couleurs de manière indépendante du dispositif, 
@@ -820,7 +820,7 @@ Elle est rapide et robuste dans la majorité des cas, mais reste théoriquement 
 
         # Analyse et observations
         sec4_raw_analyse_text = textwrap.dedent("""
-        COMPARAISON DES RÉSULTATS DES DIFFÉRENTS OPÉRATEURS DE MAPPAGE TONAL (VISUEL, PLAGE DYNAMIQUE)
+        <strong>COMPARAISON DES RÉSULTATS DES DIFFÉRENTS OPÉRATEURS DE MAPPAGE TONAL (VISUEL, PLAGE DYNAMIQUE)</strong><br>
         Sur les images déjà bien exposées ou peu contrastées (par exemple, a0011-DSC_0082), Reinhard, en compressant les tons moyens-haut, 
         crée un effet d'aplanissement peu intéressant. D'ailleurs, on observe bien sur les histogramme la compression de la plage des couleurs.
         Dans ces cas, l'opérateur linéaire donne un meilleur résultat.
@@ -830,11 +830,11 @@ Elle est rapide et robuste dans la majorité des cas, mais reste théoriquement 
         
         J'en conclus que les images n'étaient pas HDR (à grande plage de luminance), donc que la compression de la plage des couleurs n'est pas nécessaire.
 
-        IMPACT DE L'OETF SUR L'APPARENCE DE L'IMAGE
+       <strong>IMPACT DE L'OETF SUR L'APPARENCE DE L'IMAGE</strong><br>
         L’application de l’OETF sRGB modifie significativement l’apparence de l’image en augmentant la luminosité perçue des tons moyens, 
         rendant l’image plus naturelle à l’écran. On percoit ainsi mieux, par exemple, les détails des zones sombres. 
         
-        ANALYSE DE LA PLAGE DYNAMIQUE ET DES ZONES ÉCRETÉES/ÉCRASÉES
+        <strong>ANALYSE DE LA PLAGE DYNAMIQUE ET DES ZONES ÉCRETÉES/ÉCRASÉES</strong><br>
         Aucune des images n'a de hautes lumières écrêtées, c'est à dire de pixels avec une luminance ≥ 0.99. 
         Ces pixels très lumineux auraient été des zones complètement blanches perdant du détail. C'est donc une bonne chose.
         
@@ -850,7 +850,7 @@ Elle est rapide et robuste dans la majorité des cas, mais reste théoriquement 
         Le nombre de stops de la plage dynamique est une unité logarithmique servant à quantifier le nombre de fois 
         où le pixel le plus clair est plus lumineux que le plus sombre. Donc un nombre de stop faibles indique que la scène est éclairée de manière assez uniforme.
         
-        DISCUSSION SUR LA COMPRESSION JPEG À DIFFÉRENTES QUALITÉS
+        <strong>DISCUSSION SUR LA COMPRESSION JPEG À DIFFÉRENTES QUALITÉS</strong><br>
         Vue de loin, la compression JPEG, meme à des niveaux élevés (jusqu'à 25%), ne modifie pas de manière perceptible l'image.
         Toutefois, en zoomant, on voit bien l'effet de la compression. 
         Dans un certain sens, parfois, la compression adoucit l'image, ce qui permet de masquer les 
