@@ -995,6 +995,72 @@ Elle est rapide et robuste dans la majorité des cas, mais reste théoriquement 
     content += section("Section 4: Mappage Tonal et Encodage d'Affichage", sec4_content, icon="🎨")
 
     # =============================================================================
+    # SECTION 6: Mes propres images RAW
+    # =============================================================================
+    sec6_content = ""
+
+    # Texte d'introduction pour la section 6
+    sec6_raw_intro_text = textwrap.dedent("""
+    Les images 1, 2 et 3 sont des photos que j'ai prises avec un Samsung Android en mode pro. À noter: Les images finales ne sont pas dans cette section, mais plutôt à la fin du rapport.
+        """)
+
+    sec6_content += subsection(
+        "Introduction",
+        make_styled_paragraphs(sec6_raw_intro_text)
+    )
+
+    sec6_basenames = [
+        "image1",
+        "image2",
+        "image3",
+    ]
+
+    for basename in sec6_basenames:
+        sec6_img_content = ""
+
+        # Figure: Étape Malvar
+        xyz_path = os.path.join(sec2_dir, f"{basename}_malvar.jpg")
+        if os.path.exists(xyz_path):
+            sec6_img_content += subsection(
+                f"Après le dématriçage - {basename}",
+                figure(xyz_path,
+                       "Image après le dématriçage selon la méthode de Malvar")
+            )
+
+        # Figure: Étape Caméra
+        xyz_path = os.path.join(sec3_dir, f"{basename}_camera.jpg")
+        if os.path.exists(xyz_path):
+            sec6_img_content += subsection(
+                f"Après la balance des blancs - {basename}",
+                figure(xyz_path,
+                       "Image après la balance des blancs selon la méthode Caméra")
+            )
+
+        if sec6_img_content:
+            sec6_content += section(f"Image: {basename}", sec6_img_content)
+
+        # Analyse et observations
+        sec6_raw_analyse_text = textwrap.dedent("""
+        On constate que le pipeline de transformation fonctionne aussi sur mes images personnelles.
+                """)
+    sec6_content += subsection(
+        "Analyse et observations",
+        make_styled_paragraphs(sec6_raw_analyse_text)
+    )
+
+    # Utilisation d'un LLM
+    sec6_raw_approche_text = textwrap.dedent("""
+        Pour cette section, assez simple, je n'ai utilisé aucun LLM.
+                """)
+
+    sec6_content += subsection(
+        "Approche utilisée",
+        make_styled_paragraphs(sec6_raw_approche_text)
+    )
+
+    content += section("Section 6: Mes propres images RAW", sec6_content, icon="⚪")
+
+    # =============================================================================
     # GRILLE DE COMPARAISON DES IMAGES FINALES
     # =============================================================================
     # Collecter toutes les images finales JPG de la section 4 et leurs références
@@ -1003,13 +1069,13 @@ Elle est rapide et robuste dans la majorité des cas, mais reste théoriquement 
 
     for jpg_path in jpg_files:
         basename = os.path.basename(jpg_path).replace("_final.jpg", "")
-        final_src = os.path.basename(jpg_path)
+        final_src = os.path.join(sec4_dir, f"{basename}_final.jpg")
 
         # Chercher l'image de référence correspondante
         reference_src = None
         srgb_path = os.path.join(sec1_dir, f"{basename}_srgb.jpg")
         if os.path.exists(srgb_path):
-            reference_src = f"../../report/images_intermediaires_sec1/{basename}_srgb.jpg"
+            reference_src = srgb_path
 
         if reference_src:
             comparisons.append({
