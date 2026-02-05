@@ -765,25 +765,25 @@ Elle est rapide et robuste dans la majorité des cas, mais reste théoriquement 
     # Concepts et algorithmes
     algorithms = algorithm_box(
         "A) Ajustement de luminosité",
-        "<p>Division par le 99e percentile. <strong>À IMPLÉMENTER</strong></p>",
+        "<p>Division par le 99e percentile.</p>",
     )
     algorithms += algorithm_box(
         "B) Mappage tonal",
         "<p><b>Linéaire:</b> Pas de compression.</p>"
-        "<p><b>Reinhard:</b> <code>L_out = L_in / (1 + L_in)</code>. <strong>À IMPLÉMENTER</strong></p>",
+        "<p><b>Reinhard:</b> <code>L_out = L_in / (1 + L_in)</code>.</p>",
     )
     algorithms += algorithm_box(
         "C) Conversion XYZ → sRGB",
-        "<p>Matrice standard D65 suivie de l'OETF sRGB. <strong>IMPLÉMENTÉ</strong></p>",
+        "<p>Matrice standard D65 suivie de l'OETF sRGB.</p>",
     )
     algorithms += algorithm_box(
         "D) OETF sRGB",
         formula_box("sRGB = 1.055 × linéaire^(1/2.4) − 0.055")
-        + "<p><strong>IMPLÉMENTÉ</strong></p>",
+        ,
     )
     algorithms += algorithm_box(
         "E) Analyse des artefacts JPEG",
-        "<p>Sauvegarde en différentes qualités et analyse des artefacts. <strong>À IMPLÉMENTER PAR L'ÉTUDIANT</strong></p>",
+        "<p>Sauvegarde en différentes qualités et analyse des artefacts.</p>",
     )
 
     sec4_content += subsection("Concepts et algorithmes", algorithms)
@@ -794,6 +794,14 @@ Elle est rapide et robuste dans la majorité des cas, mais reste théoriquement 
         sec4_content += subsection(
             "Courbes de mappage tonal",
             figure("tonemapping_curves.png", "Comparaison des courbes de réponse")
+        )
+
+    # Figure: Graphique de taille vs qualité jpeg
+    curves_path = os.path.join(sec4_dir, "jpeg_size_vs_quality_global_mean.png")
+    if os.path.exists(curves_path):
+        sec4_content += subsection(
+            "Taille du jpeg par rapport à sa qualité",
+            figure("tonemapping_curves.png", "Comparaison de la taille du jpeg par rapport à sa qualité")
         )
 
     # Figures pour chaque image
@@ -829,6 +837,17 @@ Elle est rapide et robuste dans la majorité des cas, mais reste théoriquement 
                 figure(
                     f"{basename}_oetf_comparison.png",
                     "L'OETF encode les valeurs linéaires pour l'affichage",
+                ),
+            )
+
+        # Figure: Niveaux de compression jpeg
+        oetf_path = os.path.join(sec4_dir, f"{basename}_jpeg_zoom.png")
+        if os.path.exists(oetf_path):
+            sec4_img_content += subsection(
+                "Comparaison des niveaux de compression jpeg",
+                figure(
+                    f"{basename}_jpeg_zoom.png",
+                    "Comparaison des niveaux de compression jpeg",
                 ),
             )
 
