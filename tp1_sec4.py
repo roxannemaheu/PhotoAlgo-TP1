@@ -708,12 +708,27 @@ Elle est rapide et robuste dans la majorité des cas, mais reste théoriquement 
     sec4_content = ""
 
     # Texte d'introduction pour la section 4
+    sec4_raw_intro_text = textwrap.dedent("""
+    Le mappage tonal est nécessaire pour afficher correctement une image dont la plage dynamique dépasse celle des écrans.
+    Il compresse les valeurs linéaires capturées par le capteur en valeurs adaptées à l’affichage, en préservant détails et contraste.
+    
+    Afin de préparer l'image pour le mappage tonal, il faut d'abord ajuster sa luminosité, 
+    pour exclure des futurs calculs les valeurs extrêmement lumineuses, qui seraient aberrantes. 
+    Dans ce TP, la manière de faire a été d'utiliser le 99ᵉ percentile d'intensité pour diviser les images par cette valeur.
+
+    Ensuite, plusieurs opérateurs sont possibles. Ils peuvent être linéaires (simple normalisation, rapide mais écrase les hautes lumières) 
+    ou Reinhard (non linéaire, compresse les hautes lumières tout en conservant les détails dans les ombres).
+    
+    L’OETF sRGB applique une correction gamma pour adapter les valeurs linéaires à la perception humaine, 
+    renforçant la luminosité perçue dans les tons moyens.
+    
+    L’analyse de la plage dynamique permet d’évaluer si les détails dans les zones très claires 
+    ou très sombres sont préservés et si le mappage tonal est efficace.
+        """
+                                          )
     sec4_content += subsection(
         "Introduction",
-        '<div style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #778da9;">'
-        '<p style="color: #a0a0a0; font-style: italic;">À remplir: Expliquez le besoin du mappage tonal, '
-        'les différents opérateurs (linéaire, Reinhard), l\'OETF sRGB, et l\'analyse de la plage dynamique.</p>'
-        '</div>'
+        make_styled_paragraphs(sec4_raw_intro_text)
     )
 
     # Concepts et algorithmes
@@ -823,14 +838,58 @@ Elle est rapide et robuste dans la majorité des cas, mais reste théoriquement 
         if sec4_img_content:
             sec4_content += section(basename, sec4_img_content)
 
-    # Analyse et observations
+        # Analyse et observations
+        sec4_raw_analyse_text = textwrap.dedent("""
+        COMPARAISON DES RÉSULTATS DES DIFFÉRENTS OPÉRATEURS DE MAPPAGE TONAL (VISUEL, PLAGE DYNAMIQUE)
+        Sur les images déjà bien exposées ou peu contrastées (par exemple, a0011-DSC_0082), Reinhard, en compressant les tons moyens-haut, 
+        crée un effet d'aplanissement peu intéressant. D'ailleurs, on observe bien sur les histogramme la compression de la plage des couleurs.
+        Dans ces cas, l'opérateur linéaire donne un meilleur résultat.
+        
+        Toutefois, pour des images plus contrastées comme celle où on voit directement le soleil (a0563-IMG_0286), 
+        le résultat est un peu plus beau (moins éblouissant) avec Reinhard.
+        
+        J'en conclus que les images n'étaient pas HDR (à grande plage de luminance), donc que la compression de la plage des couleurs n'est pas nécessaire.
+
+        IMPACT DE L'OETF SUR L'APPARENCE DE L'IMAGE
+        L’application de l’OETF sRGB modifie significativement l’apparence de l’image en augmentant la luminosité perçue des tons moyens, 
+        rendant l’image plus naturelle à l’écran. On percoit ainsi mieux, par exemple, les détails des zones sombres. 
+        
+        ANALYSE DE LA PLAGE DYNAMIQUE ET DES ZONES ÉCRETÉES/ÉCRASÉES
+        Aucune des images n'a de hautes lumières écrêtées, c'est à dire de pixels avec une luminance ≥ 0.99. 
+        Ces pixels très lumineux auraient été des zones complètement blanches perdant du détail. C'est donc une bonne chose.
+        
+        Quant aux ombres écrasées, il s'agit des pixels dont la luminance ≤ 0.01, donc qui crée une perte de détails dans les zones sombres.
+        Certaines photos en comportent une minime quantité.
+        Si on exclut une photo des étoiles dans l'espace en comportant 1.94% (ce qui parait normal étant donné que c'est l'espace..), 
+        le maximum est de 0.66%, ce qui est minime. Les photos comportent en général beaucoup de zones sombres (visible par les pixels bleus sur les images de Plage dynamique, 
+        qui représentent tous les pixels dont la luminance est ≤ 0.05), donc on peut en conclure que c'est ce qui explique la présence de quelques ombres écrasées.
+        
+        En comparant les histogrammes de zones dynamiques linéaires à ceux sRGB, on constate l'effet de la correction gamma, 
+        soit de déplacer les valeurs vers le centre de l'histogramme, plus près de ce que perçoit l'oeil.
+        
+        Le nombre de stops de la plage dynamique est une unité logarithmique servant à quantifier le nombre de fois 
+        où le pixel le plus clair est plus lumineux que le plus sombre. Donc un nombre de stop faibles indique que la scène est éclairée de manière assez uniforme.
+        
+        DISCUSSION SUR LA COMPRESSION JPEG À DIFFÉRENTES QUALITÉS
+        Vue de loin, la compression JPEG, meme à des niveaux élevés (jusqu'à 25%), ne modifie pas de manière perceptible l'image.
+        Toutefois, en zoomant, on voit bien l'effet de la compression. 
+        Dans un certain sens, parfois, la compression adoucit l'image, ce qui permet de masquer les 
+        autres artefacts apparus à d'autres étapes du pipeline de transformation des photos. C'est ce qui se passe pour a0011-DSC_0082, 
+        qui à mon avis souffre très peu du 75% de compression pour cette raison. 
+         
+        Les qualités de compression plus faibles introduisent des artefacts de bloc et une perte de finesse, 
+        particulièrement visibles dans les zones texturées et les dégradés, bien que même à 25% de compression, 
+        les images me paraissent tout de même étonamment nettes.
+        
+        Finalement, le graphique montre bien qu'il vaut la peine de compresser en jpeg si on veut économiser de l'espace, 
+        et ce jusqu'à environ 75% de qualité. 
+        Plus bas, les gains en taille de fichier sont beaucoup plus faibles, pour des pertes de qualité importantes.
+        
+        Ma conclusion serait donc qu'une compression de 75% en jpeg est optimale.
+            """)
     sec4_content += subsection(
         "Analyse et observations",
-        '<div style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #778da9;">'
-        '<p style="color: #a0a0a0; font-style: italic;">À remplir: Comparez les résultats des différents opérateurs de mappage tonal. '
-        'Discutez de l\'impact de l\'OETF sur l\'apparence de l\'image. Analysez la plage dynamique et les zones écrêtées/écrasées. '
-        'Discutez des artefacts JPEG à différentes qualités.</p>'
-        '</div>'
+        make_styled_paragraphs(sec4_raw_analyse_text)
     )
 
     content += section("Section 4: Mappage Tonal et Encodage d'Affichage", sec4_content, icon="🎨")
@@ -881,13 +940,27 @@ Elle est rapide et robuste dans la majorité des cas, mais reste théoriquement 
     # =============================================================================
     # CONCLUSION GÉNÉRALE
     # =============================================================================
+    raw_conclusion_text = textwrap.dedent("""
+    Le mappage tonal est nécessaire pour afficher correctement une image dont la plage dynamique dépasse celle des écrans.
+    Il compresse les valeurs linéaires capturées par le capteur en valeurs adaptées à l’affichage, en préservant détails et contraste.
+
+    Afin de préparer l'image pour le mappage tonal, il faut d'abord ajuster sa luminosité, 
+    pour exclure des futurs calculs les valeurs extrêmement lumineuses, qui seraient aberrantes. 
+    Dans ce TP, la manière de faire a été d'utiliser le 99ᵉ percentile d'intensité pour diviser les images par cette valeur.
+
+    Ensuite, plusieurs opérateurs sont possibles. Ils peuvent être linéaires (simple normalisation, rapide mais écrase les hautes lumières) 
+    ou Reinhard (non linéaire, compresse les hautes lumières tout en conservant les détails dans les ombres).
+
+    L’OETF sRGB applique une correction gamma pour adapter les valeurs linéaires à la perception humaine, 
+    renforçant la luminosité perçue dans les tons moyens.
+
+    L’analyse de la plage dynamique permet d’évaluer si les détails dans les zones très claires 
+    ou très sombres sont préservés et si le mappage tonal est efficace.
+        """
+                                          )
     conclusion_content = subsection(
         "Conclusion",
-        '<div style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffd54f;">'
-        '<p style="color: #a0a0a0; font-style: italic;">À remplir: Faites une synthèse de votre travail sur les quatre sections. '
-        'Discutez des défis rencontrés, des apprentissages, et des améliorations possibles. '
-        'Comparez vos résultats avec les images de référence.</p>'
-        '</div>'
+        make_styled_paragraphs(raw_conclusion_text)
     )
 
     content += section("Conclusion", conclusion_content, icon="📝")
