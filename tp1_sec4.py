@@ -527,7 +527,14 @@ On voit clairement que chaque pixel ne contient qu’une seule composante de cou
         make_styled_paragraphs(sec2_raw_intro_text)
     )
 
-    for basename in basenames:
+    sec2_extra_basenames = [
+        "a0026-kme_391",
+        "pelican",
+    ]
+
+    sec2_basenames = basenames + sec2_extra_basenames
+
+    for basename in sec2_basenames:
         sec2_img_content = ""
 
         # Figure: Comparaison des méthodes
@@ -657,7 +664,14 @@ Elle est rapide et robuste dans la majorité des cas, mais reste théoriquement 
         make_styled_paragraphs(sec3_raw_intro_text)
     )
 
-    for basename in basenames:
+    sec3_extra_basenames = [
+        "a0026-kme_391",
+        "a0387-IMG_3388",
+    ]
+
+    sec3_basenames = basenames + sec3_extra_basenames
+
+    for basename in sec3_basenames:
         sec3_img_content = ""
 
         # Figure: Comparaison des méthodes
@@ -808,10 +822,17 @@ Elle est rapide et robuste dans la majorité des cas, mais reste théoriquement 
     # Figures pour chaque image
     # Utiliser results si disponible, sinon utiliser basenames
     # Filtrer pour ne garder que les 2 images sélectionnées
+    sec4_extra_basenames = [
+        "a0563-IMG_0286",
+        "pelican",
+    ]
+
+    sec4_basenames = basenames + sec4_extra_basenames
+
     if results:
-        images_to_process = [r for r in results if r["basename"] in basenames]
+        images_to_process = [r for r in results if r["basename"] in sec4_basenames]
     else:
-        images_to_process = [{"basename": bn} for bn in basenames]
+        images_to_process = [{"basename": bn} for bn in sec4_basenames]
 
     for result in images_to_process:
         basename = result["basename"]
