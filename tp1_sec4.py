@@ -128,27 +128,7 @@ def tonemap_reinhard(xyz_image):
     Returns:
         Image XYZ avec mappage tonal appliqué
     """
-
-    # Copier l'image pour ne pas modifier l'entrée
-    result = xyz_image.copy()
-
-    # 1. Extraire le canal Y (luminance)
-    Y = xyz_image[:, :, 1]
-
-    # 2. Appliquer la formule de Reinhard sur Y
-    Y_mapped = Y / (1.0 + Y)
-
-    # 3. Calculer le facteur d'échelle (éviter division par zéro)
-    scale = np.ones_like(Y)
-    mask = Y > 0
-    scale[mask] = Y_mapped[mask] / Y[mask]
-
-    # 4. Appliquer ce ratio à X, Y et Z
-    result[:, :, 0] *= scale  # X
-    result[:, :, 1] = Y_mapped  # Y (remplacé directement)
-    result[:, :, 2] *= scale  # Z
-
-    return result
+    return xyz_image.copy() / (1 + xyz_image)
 
 
 # =============================================================================
@@ -941,21 +921,20 @@ Elle est rapide et robuste dans la majorité des cas, mais reste théoriquement 
     # CONCLUSION GÉNÉRALE
     # =============================================================================
     raw_conclusion_text = textwrap.dedent("""
-    Le mappage tonal est nécessaire pour afficher correctement une image dont la plage dynamique dépasse celle des écrans.
-    Il compresse les valeurs linéaires capturées par le capteur en valeurs adaptées à l’affichage, en préservant détails et contraste.
-
-    Afin de préparer l'image pour le mappage tonal, il faut d'abord ajuster sa luminosité, 
-    pour exclure des futurs calculs les valeurs extrêmement lumineuses, qui seraient aberrantes. 
-    Dans ce TP, la manière de faire a été d'utiliser le 99ᵉ percentile d'intensité pour diviser les images par cette valeur.
-
-    Ensuite, plusieurs opérateurs sont possibles. Ils peuvent être linéaires (simple normalisation, rapide mais écrase les hautes lumières) 
-    ou Reinhard (non linéaire, compresse les hautes lumières tout en conservant les détails dans les ombres).
-
-    L’OETF sRGB applique une correction gamma pour adapter les valeurs linéaires à la perception humaine, 
-    renforçant la luminosité perçue dans les tons moyens.
-
-    L’analyse de la plage dynamique permet d’évaluer si les détails dans les zones très claires 
-    ou très sombres sont préservés et si le mappage tonal est efficace.
+    Ce TP a permis d'explorer plusieurs grandes étapes du traitement d'images RAW: 
+    le dématriçage, la balance des blancs, la conversion en espaces de couleur différents et le mappage tonal.
+    
+    Les apprentissages ont été nombreux étant donné que je ne connaissais que peu de choses par rapport au traitement de photos en général.
+    
+    Les résultats semblent bon, mais dans tous les cas, les aperçus sRGB générés par rawpy sont nettement plus beaux. 
+    En général, il semblent plus contrastés et avoir des couleurs plus vibrantes.
+    
+    À la lumière de mon analyse, il aurait peut être été préférable d'ajouter un algorithme permettant de choisir 
+    l'opérateur de mappage linéaire (linéaire ou Reinhard) à utiliser pour chaque photo selon 
+    si la plage de couleur est très répartie ou non.
+    
+    Par ailleurs, il est certain que plusieurs corrections supplémentaires ou meilleures auraient pu etre faites, 
+    dont un mappage tonal local, une correction de l'aberration chromatique, ou la suppression des pixels chauds.
         """
                                           )
     conclusion_content = subsection(
@@ -1039,7 +1018,7 @@ def process_display_encoding(
                 title=f"Mappage tonal - {basename}",
             )
 
-            # Utiliser Reinhard pour la suite
+            # Utiliser mappage Reinhard pour la suite
             xyz_tonemapped = tonemap_reinhard(xyz_image)
             rgb_linear = xyz_to_linear_srgb(xyz_tonemapped)
             rgb_linear = np.clip(rgb_linear, 0, 1)
