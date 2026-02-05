@@ -577,9 +577,10 @@ Pour des données 16 bits, les valeurs de PSNR oscillent généralement entre 60
 Nos résultats vont de 40.82 dB à 57.08 dB, pour des images majoritairement de 12 et 14 bits, et une seule image à 16 bits (pelican).
 
 Dans notre cas, comme le PSNR se calcule par rapport à l'image avec interpolation bilinéaire, 
-mon interprétion de la métrique est que plus elle est faible, plus la différence entre les deux algorithmes est marquée 
+mon interprétation de la métrique est que plus elle est élevée, plus la ressemblance entre les deux algorithmes est marquée 
 (on ne peut que comparer des images ayant le même nombre de bits). La PSNR la plus élevée est pour pelican, 
-ce qui est logique puisque J'ai toutefois eu du mal à voir une corrélation entre la valeur de la métrique (qui varie entre 40.82 et 57.08) 
+ce qui est logique puisque cette image est celle qui a le plus grand nombre de bits. 
+Autrement, j'ai toutefois eu du mal à voir une corrélation entre la valeur de la métrique (qui varie entre 40.82 et 57.08) 
 et la similarité entre les résultats.
 
 <strong>INTERPRÉTATION DES MÉTRIQUES: SSIM</strong><br>
@@ -801,7 +802,7 @@ Elle est rapide et robuste dans la majorité des cas, mais reste théoriquement 
     if os.path.exists(curves_path):
         sec4_content += subsection(
             "Taille du jpeg par rapport à sa qualité",
-            figure("tonemapping_curves.png", "Comparaison de la taille du jpeg par rapport à sa qualité")
+            figure("jpeg_size_vs_quality_global_mean.png", "Comparaison de la taille du jpeg par rapport à sa qualité")
         )
 
     # Figures pour chaque image
